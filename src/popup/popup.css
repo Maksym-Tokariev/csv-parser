@@ -1,0 +1,24 @@
+ody {
+    width: 500px;
+    padding: 15px;
+    font-family: Arial, sans-serif;
+}
+
+.controls {
+    margin: 15px 0;
+    display: flex;
+    gap: 10px;
+}
+
+button {
+    padding: 8px 15px;
+    cursor: pointer;
+    background: #4e73df;
+    color: white;
+    border: none;
+    border-radius: 4px;
+}
+
+#chartContainer {
+    margin-top: 20px;
+}
