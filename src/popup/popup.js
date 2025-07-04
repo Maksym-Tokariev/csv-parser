@@ -6,14 +6,14 @@ try {
 
 console.log("chrome.storage:", chrome.storage);
 console.log("chrome.storage.local:", chrome.storage.local);
-
-const testDate = new Date().toLocaleDateString();
-chrome.storage.local.set({
-    [testDate]: {
-        "example.com": 300,
-        "test.org": 150
-    }
-});
+//
+// const testDate = new Date().toLocaleDateString();
+// chrome.storage.local.set({
+//     [testDate]: {
+//         "example.com": 300,
+//         "test.org": 150
+//     }
+// });
 
 chrome.storage.local.get(null, data => {
     console.log("All storage data:", data);
@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     //Data downloading
     async function loadData(days = 1) {
         try {
+            console.log("Loading data: ", days);
             const dates = [];
             const now = new Date();
 
@@ -47,12 +48,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await chrome.storage.local.get(dates);
             return  dates.map(date => result[date] || {});
         } catch (e) {
-            console.error("Error loading data:", e);
+            console.error("Error loading data: ", e);
             return Array(days).fill({});
         }
     }
 
     function renderChart(data, isWeekly = false) {
+        console.log("Chart have rendered: ", data);
         if (timeChart) timeChart.destroy();
 
         const domains = {};
@@ -89,7 +91,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Обработчики кнопок
     todayBtn.addEventListener('click', async () => {
         const data = await loadData(1);
         renderChart(data);
@@ -100,7 +101,6 @@ document.addEventListener('DOMContentLoaded', () => {
         renderChart(data, true);
     });
 
-    // Инициализация
     todayBtn.click();
 });
 

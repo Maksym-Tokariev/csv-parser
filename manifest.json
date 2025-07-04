@@ -4,12 +4,15 @@
   "version": "1.0",
   "description": "Tracks time spent on websites",
   "permissions": ["storage", "tabs", "idle"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "src/popup/popup.html",
     "default_icon": "src/images/hello_extensions.png"
   },
   "web_accessible_resources": [{
-    "resources": ["lib/chart.umd.js"],
+    "resources": ["src/lib/chart.umd.js"],
     "matches": []
   }]
 }
