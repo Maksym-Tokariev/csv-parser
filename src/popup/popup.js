@@ -4,8 +4,6 @@ try {
     console.error("Chart not loaded:", e);
 }
 
-console.log("chrome.storage:", chrome.storage);
-console.log("chrome.storage.local:", chrome.storage.local);
 //
 // const testDate = new Date().toLocaleDateString();
 // chrome.storage.local.set({
@@ -53,52 +51,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function renderChart(data, isWeekly = false) {
-        console.log("Chart have rendered: ", data);
-        if (timeChart) timeChart.destroy();
-
-        const domains = {};
-        data.forEach(dayData => {
-            for (const [domain, seconds] of Object.entries(dayData)) {
-                domains[domain] = (domains[domain] || 0) + seconds;
-            }
-        });
-
-        const labels = Object.keys(domains);
-        const timeData = Object.values(domains).map(sec => Math.round(sec / 60)); // min
-
-        timeChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels,
-                datasets: [{
-                    label: isWeekly ? 'Minutes (Week)' : 'Minutes (Today)',
-                    data: timeData,
-                    backgroundColor: '#4e73df'
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: value => value + ' min'
-                        }
-                    }
-                }
-            }
-        });
-    }
-
     todayBtn.addEventListener('click', async () => {
         const data = await loadData(1);
-        renderChart(data);
+        // renderChart(data);
     });
 
     weekBtn.addEventListener('click', async () => {
         const data = await loadData(7);
-        renderChart(data, true);
+        // renderChart(data, true);
     });
 
     todayBtn.click();
