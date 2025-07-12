@@ -29,21 +29,23 @@ class TimeTracker {
             return;
         }
         chrome.tabs.onActivated.addListener(activeInfo => {
+            console.log("Domain 1 in onActivated: " + this.currentDomain);
             this.saveCurrentTime();
+            console.log("Domain 3 in onActivated: " + this.currentDomain);
             this.activeTabId = activeInfo.tabId;
             this.startTracking();
         });
 
         chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-            if (tabId == this.activeTabId && changeInfo.url) {
+            if (tabId === this.activeTabId && changeInfo.url) {
                 this.saveCurrentTime();
                 this.startTracking();
             }
         });
 
-        chrome.idle.onStateChanged.addListener(state => {
-            this.handleIdleStateChanged(state);
-        });
+        // chrome.idle.onStateChanged.addListener(state => {
+        //     this.handleIdleStateChanged(state);
+        // });
 
         chrome.tabs.onRemoved.addListener(tabId => {
            if (tabId == this.activeTabId) {
@@ -52,36 +54,47 @@ class TimeTracker {
            }
         });
 
+        chrome.alarms.create('tick', {periodInMinutes: 0.333});
 
-        chrome.tabs.query({active: true, currentWindow: true}, tabs => {
-            if (tabs[0]) {
-                this.activeTabId = tabs[0].id;
-                this.startTracking();
-            }
-        });
+        chrome.alarms.onAlarm.addListener((alarm) => {
+            if (alarm.name !== 'tick') return;
+            console.log("Alarm: " + alarm);
+        })
+
+        // chrome.tabs.query({active: true, currentWindow: true}, tabs => {
+        //     for (const tab of tabs) {
+        //         if (tab) {
+        //             this.activeTabId = tab.id;
+        //             this.startTracking().then(() => {
+        //                 console.log(`Starting tracking [${this.activeTabId}]`);
+        //             })
+        //         }
+        //     }
+        // });
+
         console.log("Tracker initialized")
     }
 
 
-    handleIdleStateChanged(state) {
-        console.log("Idle state changed:", state);
-        if (state === "idle" || state === "locked") {
-            this.saveCurrentTime();
-        }
+    // handleIdleStateChanged(state) {
+    //     console.log("Idle state changed:", state);
+    //     if (state === "idle" || state === "locked") {
+    //         this.saveCurrentTime();
+    //     }
+    //
+    //     if (state === "active") {
+    //         this.startTracking();
+    //     }
+    // }
 
-        if (state === "active") {
-            this.startTracking();
-        }
-    }
-
-    clearStorage() {
-        chrome.storage.local.clear(() => {
-            console.log("Clear storage");
-            this.activeTabId = null;
-            this.startTime = null;
-            this.currentDomain = null;
-        });
-    }
+    // clearStorage() {
+    //     chrome.storage.local.clear(() => {
+    //         console.log("Clear storage");
+    //         this.activeTabId = null;
+    //         this.startTime = null;
+    //         this.currentDomain = null;
+    //     });
+    // }
 
     async startTracking() {
         if (this.activeTabId === null ) {
@@ -108,6 +121,10 @@ class TimeTracker {
                 return;
             }
 
+            if (domain === "") {
+                domain = "undefined domain";
+            }
+
             this.currentDomain = domain;
             this.startTime = Date.now();
 
@@ -119,15 +136,13 @@ class TimeTracker {
         }
     }
 
-    clearOldData() {
-
-    }
-
     saveCurrentTime() {
         if (!this.isTreking) return;
 
         if (!this.currentDomain || !this.startTime) {
-            console.error("Current time or domain is undefined");
+            console.error(`Current time or domain is undefined: 
+            [domain : ${this.currentDomain}, time : ${this.startTime}]`);
+
             this.isTreking = false;
             return;
         }
@@ -142,24 +157,40 @@ class TimeTracker {
 
         const today = new Date().toISOString().split('T')[0];
 
-        try {
-            chrome.storage.local.get([today], result => {
-                const dailyData = result[today] || {};
 
-                dailyData[this.currentDomain] = (dailyData[this.currentDomain] || 0) + secondsSpent;
-
-                chrome.storage.local.set({ [today]: dailyData }, () => {
-                    console.log(`Saved ${secondsSpent}s for ${this.currentDomain}`);
-                });
-            });
-        } catch (e) {
-            console.error(`Failed saving data to storage: ${this.currentDomain}, ${secondsSpent}`, e);
-            this.isTreking = false;
-        }
+        const saveDomain = this.currentDomain;
+        const saveStartTime = this.startTime;
 
         this.startTime = 0;
         this.currentDomain = "";
         this.isTreking = false;
+
+        try {
+            chrome.storage.local.get([today], result => {
+                const dailyData = result[today] || {};
+
+                dailyData[saveDomain] = (dailyData[saveDomain] || 0) + secondsSpent;
+
+                chrome.storage.local.set({ [today]: dailyData }, () => {
+                    console.log(`Saved ${secondsSpent}s for ${saveDomain}`);
+
+                    chrome.runtime.sendMessage({
+                        type: "timeUpdated",
+                        domain: saveDomain,
+                        seconds: secondsSpent,
+                        date: today
+                    }, () => {
+                        if (chrome.runtime.lastError) {
+                            console.log("Message receiver not available");
+                        }
+                    });
+                });
+            });
+
+        } catch (e) {
+            console.error(`Failed saving data to storage: ${saveDomain}, ${secondsSpent}`, e);
+            this.isTreking = false;
+        }
     }
 }
 

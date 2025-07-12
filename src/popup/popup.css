@@ -1,28 +1,36 @@
-ody {
-    width: 500px;
+body {
+    width: 400px;
     padding: 15px;
     font-family: Arial, sans-serif;
 }
-
-.controls {
-    margin: 15px 0;
+.header {
     display: flex;
-    gap: 10px;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
 }
-
-body {
-    background: #dae3e2;
+.controls {
+    margin-bottom: 15px;
 }
-
+.website-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+.website-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+.time {
+    font-weight: bold;
+    color: #4e73df;
+}
 button {
-    padding: 8px 15px;
-    cursor: pointer;
+    padding: 6px 12px;
     background: #4e73df;
     color: white;
     border: none;
     border-radius: 4px;
-}
-
-#chartContainer {
-    margin-top: 20px;
+    cursor: pointer;
 }
