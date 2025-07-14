@@ -15,13 +15,15 @@ class TimeTracker {
         this.startTime = 0;
         this.currentDomain = "";
         this.isTreking = false;
+        this.tickCount = 0;
+        this.waitingTime = 45;
 
         this.init();
     }
 
     init() {
         if (!chrome.tabs || !chrome.storage) {
-            console.error("Missing required APIs");
+            confirm("Missing required APIs. Need to add permission")
             return;
         }
 
@@ -29,9 +31,7 @@ class TimeTracker {
             return;
         }
         chrome.tabs.onActivated.addListener(activeInfo => {
-            console.log("Domain 1 in onActivated: " + this.currentDomain);
             this.saveCurrentTime();
-            console.log("Domain 3 in onActivated: " + this.currentDomain);
             this.activeTabId = activeInfo.tabId;
             this.startTracking();
         });
@@ -43,58 +43,60 @@ class TimeTracker {
             }
         });
 
-        // chrome.idle.onStateChanged.addListener(state => {
+        // chrome.idle.queryState(20, state => {
+        //     console.log(`State changed after 20 sec`+ state);
         //     this.handleIdleStateChanged(state);
-        // });
+        // })
+
 
         chrome.tabs.onRemoved.addListener(tabId => {
-           if (tabId == this.activeTabId) {
+           if (tabId === this.activeTabId) {
                this.saveCurrentTime();
                this.activeTabId = null;
            }
         });
 
-        chrome.alarms.create('tick', {periodInMinutes: 0.333});
+        chrome.idle.onStateChanged.addListener((state) => {
+            this.handleIdleStateChanged(state);
+        });
 
         chrome.alarms.onAlarm.addListener((alarm) => {
             if (alarm.name !== 'tick') return;
-            console.log("Alarm: " + alarm);
-        })
+            console.log("Alarm: " + this.tickCount);
 
-        // chrome.tabs.query({active: true, currentWindow: true}, tabs => {
-        //     for (const tab of tabs) {
-        //         if (tab) {
-        //             this.activeTabId = tab.id;
-        //             this.startTracking().then(() => {
-        //                 console.log(`Starting tracking [${this.activeTabId}]`);
-        //             })
-        //         }
-        //     }
-        // });
+            chrome.idle.setDetectionInterval(3600);
+
+            if (this.isTreking) {
+                this.tickCount++;
+            }
+        });
 
         console.log("Tracker initialized")
     }
 
 
-    // handleIdleStateChanged(state) {
-    //     console.log("Idle state changed:", state);
-    //     if (state === "idle" || state === "locked") {
-    //         this.saveCurrentTime();
-    //     }
-    //
-    //     if (state === "active") {
-    //         this.startTracking();
-    //     }
-    // }
+    handleIdleStateChanged(state) {
+        console.log("Idle state changed:", state);
+        if (state === "idle" || state === "locked") {
+            console.log(`User isn't active: state - ${state}`);
+            this.saveCurrentTime();
+        }
 
-    // clearStorage() {
-    //     chrome.storage.local.clear(() => {
-    //         console.log("Clear storage");
-    //         this.activeTabId = null;
-    //         this.startTime = null;
-    //         this.currentDomain = null;
-    //     });
-    // }
+        if (state === "active") {
+            console.log(`User active`);
+            this.startTracking();
+        }
+    }
+
+    createAlarmTick() {
+        chrome.alarms.create('tick', {periodInMinutes: 0.333});
+        console.log("Alarm created");
+    }
+
+    removeAlarmTick() {
+        chrome.alarms.clear('tick');
+        console.log("Alarm removed");
+    }
 
     async startTracking() {
         if (this.activeTabId === null ) {
@@ -102,6 +104,9 @@ class TimeTracker {
         }
         try {
             this.isTreking = true;
+
+            this.createAlarmTick();
+
             const tab = await chrome.tabs.get(this.activeTabId);
 
             if (!tab.url) {
@@ -161,9 +166,11 @@ class TimeTracker {
         const saveDomain = this.currentDomain;
         const saveStartTime = this.startTime;
 
+        this.removeAlarmTick();
         this.startTime = 0;
         this.currentDomain = "";
         this.isTreking = false;
+        this.tickCount = 0;
 
         try {
             chrome.storage.local.get([today], result => {
