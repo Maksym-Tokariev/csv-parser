@@ -3,7 +3,7 @@
   "name": "Website Time Tracker",
   "version": "1.0",
   "description": "Tracks time spent on websites",
-  "permissions": ["storage", "tabs", "idle", "activeTab", "alarms", "notifications"],
+  "permissions": ["storage", "tabs", "idle", "activeTab", "alarms", "notifications", "nativeMessaging"],
   "background": {
     "service_worker": "background.js"
   },

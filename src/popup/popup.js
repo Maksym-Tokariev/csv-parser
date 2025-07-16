@@ -43,7 +43,22 @@ document.addEventListener("DOMContentLoaded", () => {
             timeEl.className = 'time';
             timeEl.textContent = formatTime(seconds);
 
+            const editBtn = document.createElement('button');
+            editBtn.className = 'editBtn';
+            editBtn.textContent = 'Edit domain';
+
+            const excludeBtn = document.createElement('button');
+            excludeBtn.className = 'excludeDomainBtnInList';
+            excludeBtn.textContent = 'exclude';
+
+            const deleteDomainBtn = document.createElement('button');
+            deleteDomainBtn.className = 'deleteDomainBtnInList';
+            deleteDomainBtn.textContent = 'delete';
+
             item.appendChild(domainEl);
+            item.appendChild(editBtn);
+            item.appendChild(excludeBtn);
+            item.appendChild(deleteDomainBtn);
             item.appendChild(timeEl);
             websiteList.appendChild(item);
         });
@@ -112,6 +127,98 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    const exclusionModal = document.getElementById('exclusionModal');
+    const closeBtn = document.querySelector('.close');
+    const domainInput = document.getElementById('domainInput');
+    const addDomainBtn = document.getElementById('addDomainBtn');
+    const excludedList = document.getElementById('excludedList');
+    const excludeCurrentBtn = document.getElementById('excludeCurrentBtn');
+    const saveExclusionsBtn = document.getElementById('saveExclusionsBtn');
+
+    document.getElementById('excludeBtn').addEventListener('click', (e) => {
+       exclusionModal.style.display = 'block';
+        loadExcludedDomains();
+    });
+
+    closeBtn.addEventListener('click', () => {
+       exclusionModal.style.display = 'none';
+    });
+
+    addDomainBtn.addEventListener('click', () => {
+        const domain = domainInput.value.trim();
+        if (domain) {
+            addExcludedDomain(domain);
+            domainInput.value = '';
+        }
+    });
+
+    excludeCurrentBtn.addEventListener('click', async () => {
+        const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
+        if (tab && tab.url) {
+            try {
+                const url = new URL(tab.url);
+                addExcludedDomain(url.hostname);
+            } catch (e) {
+                console.error("Error parsing URL:", e);
+            }
+        }
+    });
+
+    saveExclusionsBtn.addEventListener('click', () => {
+        chrome.runtime.sendMessage({
+            type: "saveExcludedDomains"
+        }, () => {
+            exclusionModal.style.display = 'none';
+        });
+    });
+
+    function loadExcludedDomains() {
+        chrome.runtime.sendMessage({type: "getExcludedDomains"}, response => {
+            if (!response) {
+                console.error("No response received");
+                return;
+            }
+            excludedList.innerHTML = '';
+            response.domains.forEach(domain => {
+                const li = document.createElement('li');
+                li.textContent = domain;
+
+                const removeBtn = document.createElement('button');
+                removeBtn.textContent = 'Remove';
+                removeBtn.addEventListener('click', () => {
+                    chrome.runtime.sendMessage({
+                       type: "removeExcludedDomain",
+                       domain: domain
+                   }, (response) => {
+                        if (response && response.success) {
+                            li.remove();
+                        } else {
+                            console.error("Failed to remove domain");
+                            confirm("Failed to remove domain");
+                        }
+                   });
+                });
+
+                li.appendChild(removeBtn);
+                excludedList.appendChild(li);
+            });
+        });
+    }
+
+    function addExcludedDomain(domain) {
+        const exists = Array.from(excludedList.children).some(
+            li => li.textContent.includes(domain)
+        );
+
+        if (!exists) {
+            chrome.runtime.sendMessage({
+                type: "addExcludedDomain",
+                domain: domain
+            }, () => {
+                loadExcludedDomains();
+            });
+        }
+    }
+
     todayBtn.click();
 });
-

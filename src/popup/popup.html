@@ -17,10 +17,28 @@
         <button id="todayBtn">Today</button>
         <button id="weekBtn">Week</button>
         <button id="clearBtn">Clear Data</button>
+        <button id="excludeBtn">Exclude domain</button>
     </div>
 
-    <div id="websiteList" class="website-list">
+    <div id="websiteList" class="website-list"></div>
+    <div id="exclusionModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Управление исключениями</h2>
 
+            <div class="input-group">
+                <input type="text" id="domainInput" placeholder="Введите домен (например: youtube.com)">
+                <button id="addDomainBtn">Добавить</button>
+            </div>
+
+            <h3>Исключенные сайты:</h3>
+            <ul id="excludedList"></ul>
+
+            <div class="actions">
+                <button id="excludeCurrentBtn">Exclude</button>
+                <button id="saveExclusionsBtn">Save</button>
+            </div>
+        </div>
     </div>
 <script src="../lib/chart.umd.js"></script>
 <script src="popup.js"></script>

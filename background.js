@@ -16,7 +16,9 @@ class TimeTracker {
         this.currentDomain = "";
         this.isTreking = false;
         this.tickCount = 0;
-        this.waitingTime = 45;
+        this.waitingTime = 3600;
+        this.alarmName = 'timeTrackerKeepAlive';
+        this.excludedDomains = new Set();
 
         this.init();
     }
@@ -30,6 +32,19 @@ class TimeTracker {
         if (!isChromeAPIAvailable()) {
             return;
         }
+
+        chrome.storage.local.get('excludedDomains', result => {
+            if (result.excludedDomains) {
+                result.excludedDomains.forEach(domain => {
+                    this.excludedDomains.add(domain);
+                });
+            }
+        });
+
+        chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+            this.excludedDomain(message, sender, sendResponse);
+        });
+
         chrome.tabs.onActivated.addListener(activeInfo => {
             this.saveCurrentTime();
             this.activeTabId = activeInfo.tabId;
@@ -43,12 +58,6 @@ class TimeTracker {
             }
         });
 
-        // chrome.idle.queryState(20, state => {
-        //     console.log(`State changed after 20 sec`+ state);
-        //     this.handleIdleStateChanged(state);
-        // })
-
-
         chrome.tabs.onRemoved.addListener(tabId => {
            if (tabId === this.activeTabId) {
                this.saveCurrentTime();
@@ -61,40 +70,69 @@ class TimeTracker {
         });
 
         chrome.alarms.onAlarm.addListener((alarm) => {
-            if (alarm.name !== 'tick') return;
-            console.log("Alarm: " + this.tickCount);
+            if (alarm.name !== this.alarmName) return;
+            console.log("timeTrackerKeepAlive");
 
-            chrome.idle.setDetectionInterval(3600);
+            chrome.idle.setDetectionInterval(this.waitingTime);
 
             if (this.isTreking) {
                 this.tickCount++;
             }
         });
 
+        chrome.runtime.onMessage.addListener((message) => {
+            if (message.type === "excludedDomain") {
+                this.excludedDomains.add(message.domain);
+                chrome.storage.local.set({excludedDomains: [...this.excludedDomains]});
+            }
+        });
+
         console.log("Tracker initialized")
     }
 
+    excludedDomain(message, sender, sendResponse) {
+        if (message.type === "addExcludedDomain") {
+            this.excludedDomains.add(message.domain);
+            sendResponse({success: true});
+            return true;
+        } else if (message.type === "removeExcludedDomain") {
+            const deleted = this.excludedDomains.delete(message.domain);
+            sendResponse({ success: deleted });
+            return true;
+        } else if (message.type === "getExcludedDomains") {
+            sendResponse({ domains: [...this.excludedDomains] });
+            return true;
+        } else if (message.type === "saveExcludedDomains") {
+            chrome.storage.local.set({ excludedDomains: [...this.excludedDomains] });
+            sendResponse({success: true});
+            return true;
+        }
+        return false;
+    }
 
     handleIdleStateChanged(state) {
         console.log("Idle state changed:", state);
         if (state === "idle" || state === "locked") {
             console.log(`User isn't active: state - ${state}`);
-            this.saveCurrentTime();
-        }
-
-        if (state === "active") {
+            setTimeout(() => this.saveCurrentTime(), 5000);
+        } else if (state === "active") {
             console.log(`User active`);
-            this.startTracking();
+            chrome.tabs.query({active: true, currentWindow: true}, tabs => {
+                if (tabs[0] && tabs[0].id === this.activeTabId) {
+                    this.startTracking();
+                }
+            });
+
         }
     }
 
     createAlarmTick() {
-        chrome.alarms.create('tick', {periodInMinutes: 0.333});
+        chrome.alarms.create(this.alarmName, {periodInMinutes: 0.333});
         console.log("Alarm created");
     }
 
     removeAlarmTick() {
-        chrome.alarms.clear('tick');
+        chrome.alarms.clear(this.alarmName);
         console.log("Alarm removed");
     }
 
@@ -120,6 +158,12 @@ class TimeTracker {
             try {
                 const url = new URL(tab.url);
                 domain = url.hostname;
+
+                if (this.excludedDomains.has(domain)) {
+                    console.log(`Skipping excluded domain: ${domain}`);
+                    this.isTreking = false;
+                    return;
+                }
 
             } catch (e) {
                 console.error("Error parsing URL:", tab.url, e);
