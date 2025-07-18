@@ -14,7 +14,7 @@ class TimeTracker {
         this.activeTabId = null;
         this.startTime = 0;
         this.currentDomain = "";
-        this.isTreking = false;
+        this.isTracking = false;
         this.tickCount = 0;
         this.waitingTime = 3600;
         this.alarmName = 'timeTrackerKeepAlive';
@@ -42,7 +42,7 @@ class TimeTracker {
         });
 
         chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-            this.excludedDomain(message, sender, sendResponse);
+            this.handleMessage(message, sender, sendResponse);
         });
 
         chrome.tabs.onActivated.addListener(activeInfo => {
@@ -59,10 +59,10 @@ class TimeTracker {
         });
 
         chrome.tabs.onRemoved.addListener(tabId => {
-           if (tabId === this.activeTabId) {
-               this.saveCurrentTime();
-               this.activeTabId = null;
-           }
+            if (tabId === this.activeTabId) {
+                this.saveCurrentTime();
+                this.activeTabId = null;
+            }
         });
 
         chrome.idle.onStateChanged.addListener((state) => {
@@ -75,39 +75,111 @@ class TimeTracker {
 
             chrome.idle.setDetectionInterval(this.waitingTime);
 
-            if (this.isTreking) {
+            if (this.isTracking) {
                 this.tickCount++;
-            }
-        });
-
-        chrome.runtime.onMessage.addListener((message) => {
-            if (message.type === "excludedDomain") {
-                this.excludedDomains.add(message.domain);
-                chrome.storage.local.set({excludedDomains: [...this.excludedDomains]});
             }
         });
 
         console.log("Tracker initialized")
     }
 
-    excludedDomain(message, sender, sendResponse) {
-        if (message.type === "addExcludedDomain") {
-            this.excludedDomains.add(message.domain);
-            sendResponse({success: true});
-            return true;
-        } else if (message.type === "removeExcludedDomain") {
-            const deleted = this.excludedDomains.delete(message.domain);
-            sendResponse({ success: deleted });
-            return true;
-        } else if (message.type === "getExcludedDomains") {
-            sendResponse({ domains: [...this.excludedDomains] });
-            return true;
-        } else if (message.type === "saveExcludedDomains") {
-            chrome.storage.local.set({ excludedDomains: [...this.excludedDomains] });
-            sendResponse({success: true});
-            return true;
+    handleMessage(message, sender, sendResponse) {
+        switch (message.type) {
+            case "addExcludedDomain":
+                this.excludedDomains.add(message.domain);
+                sendResponse({success: true});
+                return true;
+
+            case "removeExcludedDomains":
+                const deleted = this.excludedDomains.delete(message.domain);
+                sendResponse({success: deleted});
+                return true;
+
+            case "getExcludedDomains":
+                sendResponse({domains: [...this.excludedDomains]});
+                return true;
+
+            case "excludedDomain":
+                this.excludedDomains.add(message.domain);
+                chrome.storage.local.set({excludedDomains: [...this.excludedDomains]});
+
+            case "saveExcludedDomains":
+                chrome.storage.local.set({excludedDomains: [...this.excludedDomains]});
+                sendResponse({success: true});
+                return true;
+
+            case "renameDomain":
+                this.renameDomain(message.oldDomain, message.newDomain)
+                    .then(() => sendResponse({success: true}), () => {
+                        console.log(`Domain renamed from ${message.oldDomain} to ${message.newDomain}`);
+                    })
+                    .catch((e) => sendResponse({success: false, error: e.message}));
+                return true;
+
+            case "deleteDomain":
+                this.deleteDomainData(message.domain)
+                    .then(() => {
+                        sendResponse({success: true})
+                    })
+                    .catch((e) => {
+                        console.error('Error in deleteDomainData:', e);
+                        sendResponse({success: false, error: e.message})
+                    });
+                return true;
+
+            default:
+                return false;
         }
-        return false;
+    }
+
+    async renameDomain(oldDomain, newDomain) {
+        const allData = await chrome.storage.local.get();
+        const dateKeys = Object.keys(allData).filter(key => /^\d{4}-\d{2}-\d{2}$/.test(key));
+
+        for (const date of dateKeys) {
+            const dailyData = allData[date];
+
+            if (!dailyData || !(oldDomain in dailyData)) continue;
+
+            const seconds = dailyData[oldDomain];
+            delete dailyData[oldDomain];
+            dailyData[newDomain] = (dailyData[newDomain] || 0) + seconds;
+
+            if (Object.keys(dailyData).length === 0) {
+                await chrome.storage.local.remove(date);
+            } else {
+                await chrome.storage.local.set({[date]: dailyData});
+            }
+        }
+
+        if (this.currentDomain === oldDomain) {
+            this.currentDomain = newDomain;
+        }
+    }
+
+    async deleteDomainData(domain) {
+        const allData = await chrome.storage.local.get();
+        const dateKeys = Object.keys(allData).filter(key => /^\d{4}-\d{2}-\d{2}$/.test(key));
+
+        for (const date of dateKeys) {
+            const dailyData = allData[date];
+
+            if (dailyData && domain in dailyData) {
+                delete dailyData[domain];
+
+                console.log(`${domain} deleted`);
+                if (Object.keys(dailyData).length === 0) {
+                    await chrome.storage.local.remove(date);
+                } else {
+                    await chrome.storage.local.set({[date]: dailyData})
+                }
+            }
+        }
+
+        if (this.currentDomain === domain) {
+            this.currentDomain = "";
+            this.isTracking = false;
+        }
     }
 
     handleIdleStateChanged(state) {
@@ -137,11 +209,11 @@ class TimeTracker {
     }
 
     async startTracking() {
-        if (this.activeTabId === null ) {
+        if (this.activeTabId === null) {
             return;
         }
         try {
-            this.isTreking = true;
+            this.isTracking = true;
 
             this.createAlarmTick();
 
@@ -150,7 +222,7 @@ class TimeTracker {
             if (!tab.url) {
                 console.warn("Active tab has no URL")
                 this.currentDomain = "";
-                this.isTreking = false;
+                this.isTracking = false;
                 return;
             }
 
@@ -161,7 +233,7 @@ class TimeTracker {
 
                 if (this.excludedDomains.has(domain)) {
                     console.log(`Skipping excluded domain: ${domain}`);
-                    this.isTreking = false;
+                    this.isTracking = false;
                     return;
                 }
 
@@ -181,18 +253,18 @@ class TimeTracker {
         } catch (e) {
             console.error("Failed to start tracking: ", e);
             this.currentDomain = "";
-            this.isTreking = false;
+            this.isTracking = false;
         }
     }
 
     saveCurrentTime() {
-        if (!this.isTreking) return;
+        if (!this.isTracking) return;
 
         if (!this.currentDomain || !this.startTime) {
             console.error(`Current time or domain is undefined: 
             [domain : ${this.currentDomain}, time : ${this.startTime}]`);
 
-            this.isTreking = false;
+            this.isTracking = false;
             return;
         }
 
@@ -213,7 +285,7 @@ class TimeTracker {
         this.removeAlarmTick();
         this.startTime = 0;
         this.currentDomain = "";
-        this.isTreking = false;
+        this.isTracking = false;
         this.tickCount = 0;
 
         try {
@@ -222,7 +294,7 @@ class TimeTracker {
 
                 dailyData[saveDomain] = (dailyData[saveDomain] || 0) + secondsSpent;
 
-                chrome.storage.local.set({ [today]: dailyData }, () => {
+                chrome.storage.local.set({[today]: dailyData}, () => {
                     console.log(`Saved ${secondsSpent}s for ${saveDomain}`);
 
                     chrome.runtime.sendMessage({
@@ -240,7 +312,7 @@ class TimeTracker {
 
         } catch (e) {
             console.error(`Failed saving data to storage: ${saveDomain}, ${secondsSpent}`, e);
-            this.isTreking = false;
+            this.isTracking = false;
         }
     }
 }

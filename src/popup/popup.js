@@ -7,6 +7,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let currentMod = "today";
 
+    async function loadData(day = 1) {
+        const dates = [];
+        const now = new Date();
+
+        for (let i = 0; i < day; i++) {
+            const date = new Date(now);
+            date.setDate(now.getDate() - i);
+            dates.push(date.toISOString().split('T')[0]);
+        }
+
+        const result = await chrome.storage.local.get(dates);
+
+        const combineData = {};
+        dates.forEach(date => {
+            const dailyDate = result[date] || {};
+            for (const [domain, seconds] of Object.entries(dailyDate)) {
+                combineData[domain] = (combineData[domain] || 0) + seconds;
+            }
+        });
+
+        return combineData;
+    }
+
     function formatTime(seconds) {
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
@@ -44,48 +67,111 @@ document.addEventListener("DOMContentLoaded", () => {
             timeEl.textContent = formatTime(seconds);
 
             const editBtn = document.createElement('button');
-            editBtn.className = 'editBtn';
-            editBtn.textContent = 'Edit domain';
+            editBtn.className = 'rename-btn';
+            editBtn.textContent = 'Rename';
+            editBtn.dataset.domain = domain;
 
-            const excludeBtn = document.createElement('button');
-            excludeBtn.className = 'excludeDomainBtnInList';
-            excludeBtn.textContent = 'exclude';
+            const excludeBtnInList = document.createElement('button');
+            excludeBtnInList.className = 'exclude-btn';
+            excludeBtnInList.textContent = 'Exclude';
+            excludeBtnInList.dataset.domain = domain;
 
             const deleteDomainBtn = document.createElement('button');
-            deleteDomainBtn.className = 'deleteDomainBtnInList';
-            deleteDomainBtn.textContent = 'delete';
+            deleteDomainBtn.className = 'delete-btn';
+            deleteDomainBtn.textContent = 'Delete';
+            deleteDomainBtn.dataset.domain = domain;
 
             item.appendChild(domainEl);
             item.appendChild(editBtn);
-            item.appendChild(excludeBtn);
+            item.appendChild(excludeBtnInList);
             item.appendChild(deleteDomainBtn);
             item.appendChild(timeEl);
             websiteList.appendChild(item);
         });
     }
 
-    async function loadData(day = 1) {
-        const dates = [];
-        const now = new Date();
+    websiteList.addEventListener('click', async (e) => {
+        const domain = e.target.dataset.domain;
 
-        for (let i = 0; i < day; i++) {
-            const date = new Date(now);
-            date.setDate(now.getDate() - i);
-            dates.push(date.toISOString().split('T')[0]);
+        if (!domain) return;
+
+        if (e.target.classList.contains('rename-btn')) {
+            openEditDomainModal(domain);
+        } else if (e.target.classList.contains('exclude-btn')) {
+            addExcludedDomain(domain);
+            alert(`Domain ${domain} added to exclusions`);
+        } else if (e.target.classList.contains('delete-btn')) {
+            if (confirm(`Are you sure you want to delete all data for ${domain}?`)) {
+                try {
+                    await deleteDomainData(domain);
+                    console.log(`${domain} deleted`);
+                    alert(`${domain} deleted`);
+                } catch (e) {
+                    console.error('Error deleting domain:', e);
+                    alert(e.message);
+                }
+                await updateUI();
+            }
         }
+    });
 
-        const result = await chrome.storage.local.get(dates);
+    async function deleteDomainData(domain) {
+        chrome.runtime.sendMessage({
+            type: 'deleteDomain',
+            domain: domain,
+        }, (response) => {
+            if (chrome.runtime.lastError) {
+                console.error('Runtime error:', chrome.runtime.lastError.message);
+                alert('Communication error: ' + chrome.runtime.lastError.message);
+                return;
+            }
 
-        const combineData = {};
-        dates.forEach(date => {
-            const dailyDate = result[date] || {};
-            for (const [domain, seconds] of Object.entries(dailyDate)) {
-                combineData[domain] = (combineData[domain] || 0) + seconds;
+            if (response && response.success) {
+                console.log(`Domain ${domain} deleted successfully`);
+                alert(`Deleted ${domain}`);
+            } else {
+                console.error('Delete failed:', response?.error);
+                alert('Failed to delete domain: ' + (response?.error || 'Unknown error'));
             }
         });
-
-        return combineData;
     }
+
+    const editDomainModal = document.getElementById('editDomainModal');
+    const inputNewDomainName = document.getElementById('inputNewDomainName');
+    const setNewNameBtn = document.getElementById('setNewName');
+    const closeEditDomainBtn = document.getElementById('closeEditDomainBtn');
+
+    let currentDomainBeingEdited = null;
+
+    function openEditDomainModal(domain) {
+        currentDomainBeingEdited = domain;
+        inputNewDomainName.value = domain;
+
+        const oldDomain = currentDomainBeingEdited;
+        const newDomain = inputNewDomainName.textContent
+
+        editDomainModal.style.display = 'block';
+
+        setNewNameBtn.addEventListener('click', () => {
+            return new Promise((resolve, reject) => {
+                chrome.runtime.sendMessage({
+                    type: 'renameDomain',
+                    oldDomain: oldDomain,
+                    newDomain: newDomain
+                }, (response) => {
+                    if (response && response.success) {
+                        resolve();
+                    } else {
+                        reject(new Error(response ? response.error : "Failed to delete domain data"));
+                    }
+                });
+            });
+        });
+    }
+
+    closeEditDomainBtn.addEventListener('click', () => {
+        editDomainModal.style.display = 'none';
+    });
 
     async function updateUI() {
         websiteList.innerHTML = '<div class="website-item">Loading...</div>';
@@ -127,6 +213,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+
+    // Exclusion model logic
+
     const exclusionModal = document.getElementById('exclusionModal');
     const closeBtn = document.querySelector('.close');
     const domainInput = document.getElementById('domainInput');
@@ -135,7 +224,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const excludeCurrentBtn = document.getElementById('excludeCurrentBtn');
     const saveExclusionsBtn = document.getElementById('saveExclusionsBtn');
 
-    document.getElementById('excludeBtn').addEventListener('click', (e) => {
+    document.getElementById('excludeBtn').addEventListener('click', () => {
        exclusionModal.style.display = 'block';
         loadExcludedDomains();
     });
@@ -175,7 +264,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function loadExcludedDomains() {
         chrome.runtime.sendMessage({type: "getExcludedDomains"}, response => {
             if (!response) {
-                console.error("No response received");
+                console.error("No response received to loading excluded domains");
                 return;
             }
             excludedList.innerHTML = '';
