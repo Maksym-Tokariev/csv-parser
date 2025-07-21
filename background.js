@@ -109,21 +109,22 @@ class TimeTracker {
                 return true;
 
             case "renameDomain":
-                this.renameDomain(message.oldDomain, message.newDomain)
+                this.addDomainRename(message.oldDomain, message.newDomain)
                     .then(() => sendResponse({success: true}), () => {
                         console.log(`Domain renamed from ${message.oldDomain} to ${message.newDomain}`);
                     })
                     .catch((e) => sendResponse({success: false, error: e.message}));
+                console.log(`Domain renamed from ${message.oldDomain} to ${message.newDomain}`);
                 return true;
 
             case "deleteDomain":
                 this.deleteDomainData(message.domain)
                     .then(() => {
-                        sendResponse({success: true})
+                        sendResponse({success: true});
                     })
                     .catch((e) => {
                         console.error('Error in deleteDomainData:', e);
-                        sendResponse({success: false, error: e.message})
+                        sendResponse({success: false, error: e.message});
                     });
                 return true;
 
@@ -132,29 +133,10 @@ class TimeTracker {
         }
     }
 
-    async renameDomain(oldDomain, newDomain) {
-        const allData = await chrome.storage.local.get();
-        const dateKeys = Object.keys(allData).filter(key => /^\d{4}-\d{2}-\d{2}$/.test(key));
-
-        for (const date of dateKeys) {
-            const dailyData = allData[date];
-
-            if (!dailyData || !(oldDomain in dailyData)) continue;
-
-            const seconds = dailyData[oldDomain];
-            delete dailyData[oldDomain];
-            dailyData[newDomain] = (dailyData[newDomain] || 0) + seconds;
-
-            if (Object.keys(dailyData).length === 0) {
-                await chrome.storage.local.remove(date);
-            } else {
-                await chrome.storage.local.set({[date]: dailyData});
-            }
-        }
-
-        if (this.currentDomain === oldDomain) {
-            this.currentDomain = newDomain;
-        }
+    async addDomainRename(originalDomain, alias) {
+        const { domainRenames = {} } = await chrome.storage.local.get('domainRenames');
+        domainRenames[originalDomain] = alias;
+        await chrome.storage.local.set({domainRenames});
     }
 
     async deleteDomainData(domain) {
@@ -171,7 +153,7 @@ class TimeTracker {
                 if (Object.keys(dailyData).length === 0) {
                     await chrome.storage.local.remove(date);
                 } else {
-                    await chrome.storage.local.set({[date]: dailyData})
+                    await chrome.storage.local.set({[date]: dailyData});
                 }
             }
         }

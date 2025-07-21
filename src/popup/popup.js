@@ -27,7 +27,26 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
+       await nameReplacement(combineData);
+
         return combineData;
+    }
+
+    async function nameReplacement(combineData) {
+        const { domainRenames = {} } = await chrome.storage.local.get('domainRenames');
+
+        if (Object.keys(domainRenames).length > 0) {
+            for (const realDomain of Object.keys(domainRenames)) {
+                if (realDomain in combineData) {
+                    const alias = domainRenames[realDomain];
+                    const seconds = combineData[realDomain];
+
+                    delete combineData[realDomain];
+
+                    combineData[alias] = (combineData[alias] || 0) + seconds;
+                }
+            }
+        }
     }
 
     function formatTime(seconds) {
@@ -119,20 +138,6 @@ document.addEventListener("DOMContentLoaded", () => {
         chrome.runtime.sendMessage({
             type: 'deleteDomain',
             domain: domain,
-        }, (response) => {
-            if (chrome.runtime.lastError) {
-                console.error('Runtime error:', chrome.runtime.lastError.message);
-                alert('Communication error: ' + chrome.runtime.lastError.message);
-                return;
-            }
-
-            if (response && response.success) {
-                console.log(`Domain ${domain} deleted successfully`);
-                alert(`Deleted ${domain}`);
-            } else {
-                console.error('Delete failed:', response?.error);
-                alert('Failed to delete domain: ' + (response?.error || 'Unknown error'));
-            }
         });
     }
 
@@ -148,24 +153,23 @@ document.addEventListener("DOMContentLoaded", () => {
         inputNewDomainName.value = domain;
 
         const oldDomain = currentDomainBeingEdited;
-        const newDomain = inputNewDomainName.textContent
 
         editDomainModal.style.display = 'block';
 
         setNewNameBtn.addEventListener('click', () => {
-            return new Promise((resolve, reject) => {
-                chrome.runtime.sendMessage({
-                    type: 'renameDomain',
-                    oldDomain: oldDomain,
-                    newDomain: newDomain
-                }, (response) => {
-                    if (response && response.success) {
-                        resolve();
-                    } else {
-                        reject(new Error(response ? response.error : "Failed to delete domain data"));
-                    }
-                });
+            const newDomain = inputNewDomainName.value
+
+            if (newDomain.length === 0) {
+                alert(`The field must not be empty`);
+                return;
+            }
+
+            chrome.runtime.sendMessage({
+                type: 'renameDomain',
+                oldDomain: oldDomain,
+                newDomain: newDomain
             });
+            editDomainModal.style.display = 'none';
         });
     }
 
@@ -225,12 +229,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const saveExclusionsBtn = document.getElementById('saveExclusionsBtn');
 
     document.getElementById('excludeBtn').addEventListener('click', () => {
-       exclusionModal.style.display = 'block';
+        exclusionModal.style.display = 'block';
         loadExcludedDomains();
     });
 
     closeBtn.addEventListener('click', () => {
-       exclusionModal.style.display = 'none';
+        exclusionModal.style.display = 'none';
     });
 
     addDomainBtn.addEventListener('click', () => {
@@ -276,16 +280,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 removeBtn.textContent = 'Remove';
                 removeBtn.addEventListener('click', () => {
                     chrome.runtime.sendMessage({
-                       type: "removeExcludedDomain",
-                       domain: domain
-                   }, (response) => {
+                        type: "removeExcludedDomains",
+                        domain: domain
+                    }, (response) => {
                         if (response && response.success) {
                             li.remove();
                         } else {
                             console.error("Failed to remove domain");
                             confirm("Failed to remove domain");
                         }
-                   });
+                    });
                 });
 
                 li.appendChild(removeBtn);
