@@ -5,7 +5,8 @@
   "description": "Tracks time spent on websites",
   "permissions": ["storage", "tabs", "idle", "activeTab", "alarms", "notifications", "nativeMessaging"],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "action": {
     "default_popup": "src/popup/popup.html",

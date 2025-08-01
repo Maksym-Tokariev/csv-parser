@@ -123,7 +123,6 @@ document.addEventListener("DOMContentLoaded", () => {
             if (confirm(`Are you sure you want to delete all data for ${domain}?`)) {
                 try {
                     await deleteDomainData(domain);
-                    console.log(`${domain} deleted`);
                     alert(`${domain} deleted`);
                 } catch (e) {
                     console.error('Error deleting domain:', e);
@@ -139,6 +138,7 @@ document.addEventListener("DOMContentLoaded", () => {
             type: 'deleteDomain',
             domain: domain,
         });
+        console.log("Send message to delete domain ", domain)
     }
 
     const editDomainModal = document.getElementById('editDomainModal');

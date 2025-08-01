@@ -1,3 +1,5 @@
+import * as storage from './src/scripts/storage';
+
 console.log("Background script initializing...");
 
 function isChromeAPIAvailable() {
@@ -142,6 +144,21 @@ class TimeTracker {
     async deleteDomainData(domain) {
         const allData = await chrome.storage.local.get();
         const dateKeys = Object.keys(allData).filter(key => /^\d{4}-\d{2}-\d{2}$/.test(key));
+        const { domainRenames = {} } = await chrome.storage.local.get('domainRenames');
+
+
+        for (let key in domainRenames) {
+            if (domainRenames[key] === domain) {
+                console.log(domainRenames[key] + " : " + domain)
+                domain = key;
+            }
+        }
+
+        delete domainRenames[domain];
+        console.log("Deleted domain: ", domainRenames[domain]);
+        await chrome.storage.local.set({ domainRenames });
+        console.log("Domain after key searching ", domain);
+
 
         for (const date of dateKeys) {
             const dailyData = allData[date];
