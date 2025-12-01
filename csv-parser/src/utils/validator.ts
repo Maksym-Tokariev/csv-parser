@@ -25,7 +25,8 @@ export class Validator {
 
             this.validateEmptyLine(errors, value, lineNumber, fieldName);
             this.validateLineLength(errors, value, lineNumber, fieldName);
-            if (errors.length < 0) {
+
+            if (errors.length === 0) {
                 this.validateValue(errors, value, lineNumber, fieldName);
             }
         });
@@ -73,68 +74,6 @@ export class Validator {
         return /\d/.test(value);
     }
 
-    private validateId(
-        errors: ValidationError[],
-        lineNumber: number,
-        id: string
-    ): void {
-        let numericPart: string = id;
-        let hasPrefix = false;
-
-        if (numericPart.startsWith('P')) {
-            hasPrefix = true;
-            numericPart = id.slice(1);
-
-            if (numericPart.length === 0) {
-                const message = `Id must contain numbers after 'P' prefix`;
-                this.pushError(errors, lineNumber, message, id, 'id');
-                return;
-            }
-        }
-
-        if (!/^\d+$/.test(numericPart)) {
-            const message = hasPrefix?
-                `Id with 'P' prefix must contain only number after prefix. Invalid character: ${this.findInvalidChar(numericPart)}`
-                : `Id must contain only numbers. Invalid character: ${this.findInvalidChar(numericPart)}`;
-            this.pushError(errors, lineNumber, message, id, 'id');
-            return;
-        }
-        const numId = parseInt(numericPart, 10);
-        if (numId <= 0) {
-            const message = 'Id must be positive number';
-            this.pushError(errors, lineNumber, message, id, 'id');
-            return;
-        }
-
-        console.log(`Id [${id}] is valid`);
-    }
-
-    private validatePrice(
-        errors: ValidationError[],
-        lineNumber: number,
-        value: string
-    ): void {
-        if (!/^[\d.]+$/.test(value)) {
-            const message = 'Price must contain only numbers';
-            this.pushError(errors, lineNumber, message, value, 'price');
-            return;
-        }
-        const price: number = parseFloat(value);
-
-        if (isNaN(price)) {
-            const message = 'Price must be a number';
-            this.pushError(errors, lineNumber, message, value, 'price');
-            return
-        }
-
-        if (price < 0) {
-            const message = 'Price cannot be negative';
-            this.pushError(errors, lineNumber, message, value, 'price')
-            return;
-        }
-        console.log(`Price ${value} is valid`);
-    }
-
     private validateNumberOfColumns(
         errors: ValidationError[],
         values: string[],
@@ -172,27 +111,111 @@ export class Validator {
         }
     }
 
-    private validateQuantity(
-        error: ValidationError[],
+    private validateId(
+        errors: ValidationError[],
         lineNumber: number,
-        value: string
+        value: string,
+        fieldName: string = 'id'
     ): void {
-        if (!/^\d+$/.test(value)) {
-            const message = 'Quantity must contain only numbers';
-            this.pushError(error, lineNumber, message, value, 'quantity');
+        let numericPart: string = value;
+        let hasPrefix = false;
+
+        if (numericPart.startsWith('P')) {
+            hasPrefix = true;
+            numericPart = value.slice(1);
+
+            if (numericPart.length === 0) {
+                const message = `Id must contain numbers after 'P' prefix`;
+                this.pushError(errors, lineNumber, message, value, fieldName);
+                return;
+            }
+        }
+
+        if (!/^\d+$/.test(numericPart)) {
+            const message = hasPrefix?
+                `Id with 'P' prefix must contain only number after prefix. Invalid character: ${this.findInvalidChar(numericPart)}`
+                : `Id must contain only numbers. Invalid character: ${this.findInvalidChar(numericPart)}`;
+            this.pushError(errors, lineNumber, message, value, fieldName);
             return;
         }
-        const quantity = parseInt(value);
-        if (isNaN(quantity)) {
-            const message = 'Quantity must be a number';
-            this.pushError(error, lineNumber, message, value, 'quantity');
+        const numId = parseInt(numericPart, 10);
+        if (numId <= 0) {
+            const message = 'Id must be positive number';
+            this.pushError(errors, lineNumber, message, value, fieldName);
             return;
         }
-        console.log(`Quantity ${value} is valid`);
+
+        console.log(`${fieldName} ${value} is valid`);
     }
 
-    private validateSoldAt(error: ValidationError[], lineNumber: number, value: string) {
+    private validatePrice(
+        errors: ValidationError[],
+        lineNumber: number,
+        value: string,
+        fieldName: string = 'price'
+    ): void {
+        if (!/^[\d.]+$/.test(value)) {
+            const message = 'Price must contain only numbers';
+            this.pushError(errors, lineNumber, message, value, fieldName);
+            return;
+        }
+        const price: number = parseFloat(value);
 
+        if (isNaN(price)) {
+            const message = 'Price must be a number';
+            this.pushError(errors, lineNumber, message, value, fieldName);
+            return
+        }
+
+        if (price < 0) {
+            const message = 'Price cannot be negative';
+            this.pushError(errors, lineNumber, message, value, 'price')
+            return;
+        }
+        console.log(`${fieldName} ${value} is valid`);
+    }
+
+    private validateQuantity(
+        errors: ValidationError[],
+        lineNumber: number,
+        value: string,
+        fieldName: string = 'quantity'
+    ): void {
+        const quantityMatch = value.match(/^(0|[1-9]\d*)$/);
+        if (!quantityMatch) {
+            const message = 'Quantity must be a positive integer';
+            this.pushError(errors, lineNumber, message, value, fieldName);
+            return;
+        }
+        const quantity = parseInt(value, 10);
+        if (quantity === 0) {
+            const message = 'Quantity cannot be zero';
+            this.pushError(errors, lineNumber, message, value, fieldName);
+            return;
+        }
+        console.log(`${fieldName} ${value} is valid`);
+    }
+
+    private validateSoldAt(
+        errors: ValidationError[],
+        lineNumber: number,
+        value: string,
+        fieldName: string = 'sold_at'
+    ): void {
+        const isoRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
+
+        if (!isoRegex.test(value)) {
+            const message = `${fieldName} must be in exact format: YYYY-MM-DDTHH:MM:SSZ`;
+            this.pushError(errors, lineNumber, message, value, fieldName);
+            return;
+        }
+
+        if (!this.isValidDate(value)) {
+            const message = `${fieldName} is not a valid calendar date`;
+            this.pushError(errors, lineNumber, message, value, fieldName);
+            return;
+        }
+        console.log(`${fieldName} [${value}] is valid`);
     }
 
     private validateStringValue(error: ValidationError[], lineNumber: number, value: string) {
@@ -217,12 +240,12 @@ export class Validator {
         errors.push(error);
     }
 
-    private findInvalidChar(str: string) {
+    private findInvalidChar(str: string): string {
         const invalidChar = str.split('').filter(char => !/\d/.test(char));
         return invalidChar.join(', ');
     }
 
-    private handleValidationErrors(errors: ValidationError[]) {
+    private handleValidationErrors(errors: ValidationError[]): void {
         errors.forEach(e => {
             console.log('== Error == \n_____________________________________________')
             console.warn(`Line ${e.lineNumber}: ${e.message}`);
@@ -231,5 +254,10 @@ export class Validator {
             }
             console.log('____________________________________________')
         });
+    }
+
+    private isValidDate(dateString: string): boolean {
+        const date = new Date(dateString);
+        return date.toISOString().slice(0,19) === dateString.slice(0, 19);
     }
 }
