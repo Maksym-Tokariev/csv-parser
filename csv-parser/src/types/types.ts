@@ -21,4 +21,14 @@ export interface ValidationError {
     value?: string;
 }
 
+export interface StatData {
+    totalItems: number,
+    totalRevenue: number,
+    categories_count: number,
+    countries_count: number,
+    categories_stats: {},
+    countries_stats: {},
+    top_categories: []
+}
+
 export type ColumnName = 'id' | 'category' | 'country' | 'price' | 'quantity' | 'sold_at';

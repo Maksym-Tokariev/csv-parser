@@ -40,7 +40,6 @@ export class Validator {
         lineNumber: number,
         fieldName: string
     ): void {
-        console.log(`Field name: [${fieldName}], value [${value}]`);
         switch (fieldName) {
             case 'id':
                 this.validateId(error, lineNumber, value);
@@ -55,14 +54,8 @@ export class Validator {
                 this.validateSoldAt(error, lineNumber, value);
                 break;
             default:
-                this.validateStringValue(error, lineNumber, value);
+                this.validateStringValue(error, lineNumber, value, fieldName);
                 break;
-        }
-        if (this.hasDigit(value)) {
-            `The ${value} must not contain numbers`;
-        }
-        if (this.hasSpecialChars(value)) {
-            `The ${value} must not contain special chars`;
         }
     }
 
@@ -74,11 +67,7 @@ export class Validator {
         return /\d/.test(value);
     }
 
-    private validateNumberOfColumns(
-        errors: ValidationError[],
-        values: string[],
-        lineNumber: number
-    ): void {
+    private validateNumberOfColumns(errors: ValidationError[], values: string[], lineNumber: number): void {
         if (values.length !== NUMBER_OF_COLUMNS) {
             const message: string = `Invalid number of fields. Expected ${NUMBER_OF_COLUMNS},` +
                 ` got ${values.length}`;
@@ -86,24 +75,14 @@ export class Validator {
         }
     }
 
-    private validateEmptyLine(
-        errors: ValidationError[],
-        value: string,
-        lineNumber: number,
-        fieldName: string
-    ):void {
+    private validateEmptyLine(errors: ValidationError[], value: string, lineNumber: number, fieldName: string):void {
         if (value === undefined || value.length === 0) {
             const message: string = `Empty value in column: ${fieldName}`;
             this.pushError(errors, lineNumber, message, value, fieldName);
         }
     }
 
-    private validateLineLength(
-        errors: ValidationError[],
-        value: string,
-        lineNumber: number,
-        fieldName: string
-    ): void {
+    private validateLineLength(errors: ValidationError[], value: string, lineNumber: number, fieldName: string): void {
         if (value.length > MAX_LINE_SIZE) {
             const message: string = `Value too long in column [${fieldName}].`
                 + ` Max length: ${MAX_LINE_SIZE}`;
@@ -111,12 +90,7 @@ export class Validator {
         }
     }
 
-    private validateId(
-        errors: ValidationError[],
-        lineNumber: number,
-        value: string,
-        fieldName: string = 'id'
-    ): void {
+    private validateId(errors: ValidationError[], lineNumber: number, value: string, fieldName: string = 'id'): void {
         let numericPart: string = value;
         let hasPrefix = false;
 
@@ -148,12 +122,7 @@ export class Validator {
         console.log(`${fieldName} ${value} is valid`);
     }
 
-    private validatePrice(
-        errors: ValidationError[],
-        lineNumber: number,
-        value: string,
-        fieldName: string = 'price'
-    ): void {
+    private validatePrice(errors: ValidationError[], lineNumber: number, value: string, fieldName: string = 'price'): void {
         if (!/^[\d.]+$/.test(value)) {
             const message = 'Price must contain only numbers';
             this.pushError(errors, lineNumber, message, value, fieldName);
@@ -175,12 +144,7 @@ export class Validator {
         console.log(`${fieldName} ${value} is valid`);
     }
 
-    private validateQuantity(
-        errors: ValidationError[],
-        lineNumber: number,
-        value: string,
-        fieldName: string = 'quantity'
-    ): void {
+    private validateQuantity(errors: ValidationError[], lineNumber: number, value: string, fieldName: string = 'quantity'): void {
         const quantityMatch = value.match(/^(0|[1-9]\d*)$/);
         if (!quantityMatch) {
             const message = 'Quantity must be a positive integer';
@@ -196,12 +160,7 @@ export class Validator {
         console.log(`${fieldName} ${value} is valid`);
     }
 
-    private validateSoldAt(
-        errors: ValidationError[],
-        lineNumber: number,
-        value: string,
-        fieldName: string = 'sold_at'
-    ): void {
+    private validateSoldAt(errors: ValidationError[], lineNumber: number, value: string, fieldName: string = 'sold_at'): void {
         const isoRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
 
         if (!isoRegex.test(value)) {
@@ -218,17 +177,20 @@ export class Validator {
         console.log(`${fieldName} [${value}] is valid`);
     }
 
-    private validateStringValue(error: ValidationError[], lineNumber: number, value: string) {
-
+    private validateStringValue(error: ValidationError[], lineNumber: number, value: string, fieldName: string): void {
+        if (this.hasDigit(value)) {
+            const message = `The ${value} must not contain numbers`;
+            this.pushError(error, lineNumber, message, value, fieldName);
+            return
+        }
+        if (this.hasSpecialChars(value)) {
+            const message = `The ${value} must not contain special chars`;
+            this.pushError(error, lineNumber, message, value, fieldName);
+            return;
+        }
     }
 
-    private pushError(
-        errors: ValidationError[],
-        lineNumber: number,
-        message: string,
-        value: string = '',
-        fieldName?: string,
-    ): void {
+    private pushError(errors: ValidationError[], lineNumber: number, message: string, value: string = '', fieldName?: string,): void {
         const error: ValidationError = {
             lineNumber,
             message,

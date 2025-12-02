@@ -3,14 +3,13 @@ import readline from 'readline';
 
 import {
     CSVRecord,
-    ParseResult,
-    ValidationError
+    ParseResult
 } from '../types/types';
 
 import {
     FILE_PATH
 } from '../config/constants';
-import {Validator} from "./validator";
+import { Validator } from "./validator";
 
 export class CSVProcessor {
     private readonly filePath: string;
@@ -45,22 +44,10 @@ export class CSVProcessor {
                 return this.createEmptyResult();
             }
 
-            return await this.processDataLines(rl, header);
+            return await this.processDataLines(rl);
         } finally {
             rl.close();
         }
-    }
-
-    private async processDataLines(rl: readline.Interface, headers: string[]): Promise<ParseResult> {
-        const result: ParseResult = this.createEmptyResult();
-        let lineNumber: number = 1;
-
-        for await (const line of rl) {
-            lineNumber++;
-            result.totalLines++;
-            await this.processLine(line, lineNumber, result);
-        }
-        return result;
     }
 
     private async readHeader(rl: readline.Interface): Promise<string[]> {
@@ -72,11 +59,19 @@ export class CSVProcessor {
         return headerResult.value.split(',');
     }
 
-    private async processLine(
-        line: string,
-        lineNumber: number,
-        result: ParseResult
-    ): Promise<void> {
+    private async processDataLines(rl: readline.Interface): Promise<ParseResult> {
+        const result: ParseResult = this.createEmptyResult();
+        let lineNumber: number = 1;
+
+        for await (const line of rl) {
+            lineNumber++;
+            result.totalLines++;
+            await this.processLine(line, lineNumber, result);
+        }
+        return result;
+    }
+
+    private async processLine(line: string, lineNumber: number, result: ParseResult): Promise<void> {
         const values: string[] = line.split(',');
         const hasValidationErrors = this.validator.validateLine(values, lineNumber);
 
