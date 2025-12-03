@@ -5,7 +5,7 @@ export class Aggregator {
         const totalStat: StatData = this.createEmptyStatData();
         this.calculateTotalItems(data, totalStat);
         this.calculateTotalRevenue(data, totalStat);
-        this.calculateCategoryStat(data, totalStat);
+        this.calculateCategoryStat(data, totalStat, 'category');
         return totalStat;
     }
 
@@ -24,57 +24,59 @@ export class Aggregator {
         }, 0);
     }
 
-    private calculateCategoryStat(data: ParseResult, totalStat: StatData): void {
-        const categories = {
+    private calculateCategoryStat(data: ParseResult, totalStat: StatData, key: 'category' | 'country'): void {
+        const stat = {
             items: {},
             revenue: {},
-            avgPrice: 0
+            avgPrice: {}
         }
-        this.calculateCategoryItems(data, categories)
-        this.calculateCategoryRevenue(data, categories);
-        this.calculateAvgPrice(data, categories);
+        this.calculateItems(data, key, stat)
+        this.calculateRevenue(data, key, stat);
+        this.calculateAvgPrice(data, stat);
 
-        totalStat.categories_stats = categories;
+        totalStat.categories_stats = stat;
     }
 
-    private calculateCategoryItems(
+    private calculateItems(
         data: ParseResult,
+        filed: 'category' | 'country',
         categories: {
-            items: {};
-            revenue: {};
-            avgPrice: number
+            items: Record<string, number>;
+            revenue: Record<string, number>;
+            avgPrice: Record<string, number>
         }
         ): void {
         const items: Map<string, number> =
-            this.categoriesToMap(this.getCategories(data));
-        data.records.forEach(record => {
-            const quantity: number = parseInt(record.quantity);
-            const category: string = record.category;
-            const currentQuantity: number = items.get(category) || 0;
+            this.setToMap(this.getCategories(data));
 
-            items.set(category, currentQuantity + quantity);
+        data.records.forEach(record => {
+            const key: string = record[filed];
+            const quantity: number = parseInt(record.quantity);
+            const currentQuantity: number = items.get(key) || 0;
+            items.set(key, currentQuantity + quantity);
         });
         categories.items = Object.fromEntries(items);
     }
 
-    private calculateCategoryRevenue(
+    private calculateRevenue(
         data: ParseResult,
+        field: 'category' | 'country',
         categories: {
-            items: {};
-            revenue: {};
-            avgPrice: number
+            items: Record<string, number>;
+            revenue: Record<string, number>;
+            avgPrice: Record<string, number>
         }
     ): void {
         const revenues: Map<string, number> =
-            this.categoriesToMap(this.getCategories(data));
+            this.setToMap(this.getCategories(data));
+
         data.records.forEach(record => {
             const price: number = parseInt(record.price, 10);
             const quantity: number = parseFloat(record.quantity);
-            const category: string = record.category;
             const revenue: number = price * quantity;
-            const currentRevenue: number = revenues.get(category) || 0;
+            const currentRevenue: number = revenues.get(record[field]) || 0;
 
-            revenues.set(category, currentRevenue + revenue);
+            revenues.set(record[field], currentRevenue + revenue);
         });
         categories.revenue = Object.fromEntries(revenues);
     }
@@ -84,17 +86,34 @@ export class Aggregator {
         categories: {
             items: {};
             revenue: {};
-            avgPrice: number
+            avgPrice: {}
         }
         ): void {
         const avgPrices: Map<string, number> =
-            this.categoriesToMap(this.getCategories(data));
+            this.setToMap(this.getCategories(data));
+
+        const aggregates = new Map<
+            string,
+            { sum: number, count: number }
+        >();
 
         data.records.forEach(record => {
-            const price: number = parseFloat(record.price);
             const category: string = record.category;
-            // TODO calculating avg value
+            const price: number = parseFloat(record.price);
+
+            const current: {sum: number, count: number} =
+                aggregates.get(category) || {sum: 0, count: 0};
+
+            aggregates.set(category, {
+                sum: current.sum + price,
+                count: current.count + 1
+            });
         });
+
+        aggregates.forEach(({sum, count}, category) => {
+            avgPrices.set(category, count > 0 ? sum / count : 0);
+        });
+        categories.avgPrice = avgPrices;
     }
 
     private createEmptyStatData(): StatData {
@@ -109,9 +128,9 @@ export class Aggregator {
         };
     }
 
-    private categoriesToMap(categories: Set<string>): Map<string, number> {
+    private setToMap(set: Set<string>): Map<string, number> {
         const items: Map<string, number> = new Map();
-        categories.forEach(value => {
+        set.forEach(value => {
             items.set(value, 0);
         });
         return items;

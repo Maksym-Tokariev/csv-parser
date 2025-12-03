@@ -60,7 +60,7 @@ export class Validator {
     }
 
     private hasSpecialChars(value: string): boolean {
-        return /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(value);
+        return /[!@#$%^*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(value);
     }
 
     private hasDigit(value: string): boolean {

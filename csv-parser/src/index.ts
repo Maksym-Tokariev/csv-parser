@@ -13,7 +13,7 @@ async function main(): Promise<void> {
         const res: ParseResult = await processor.parseCSV();
         showResult(res);
 
-        const stat: StatData  = await aggregator.aggregateData(res);
+        const stat: StatData = await aggregator.aggregateData(res);
         console.log('\n---- Stat ----\n');
         console.log(stat)
 
