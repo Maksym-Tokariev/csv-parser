@@ -2,11 +2,16 @@ import {ParseResult, StatData} from "../types/types";
 
 export class Aggregator {
     public async aggregateData(data: ParseResult): Promise<StatData> {
-        const totalStat: StatData = this.createEmptyStatData();
-        this.calculateTotalItems(data, totalStat);
-        this.calculateTotalRevenue(data, totalStat);
-        this.calculateCategoryStat(data, totalStat, 'category');
-        return totalStat;
+        const total: StatData = this.createEmptyStatData();
+        this.calculateTotalItems(data, total);
+        this.calculateTotalRevenue(data, total);
+
+        const categoryStat = this.calculateStat(data, 'category');
+        const countryStat = this.calculateStat(data, 'country');
+        this.enterCategoryStatStat(categoryStat, total);
+        this.enterCountryStatStat(countryStat, total);
+
+        return total;
     }
 
     private calculateTotalItems(data: ParseResult, totalStat: StatData): void {
@@ -24,7 +29,7 @@ export class Aggregator {
         }, 0);
     }
 
-    private calculateCategoryStat(data: ParseResult, totalStat: StatData, key: 'category' | 'country'): void {
+    private calculateStat(data: ParseResult, key: 'category' | 'country') {
         const stat = {
             items: {},
             revenue: {},
@@ -32,9 +37,9 @@ export class Aggregator {
         }
         this.calculateItems(data, key, stat)
         this.calculateRevenue(data, key, stat);
-        this.calculateAvgPrice(data, stat);
+        this.calculateAvgPrice(data, key, stat);
 
-        totalStat.categories_stats = stat;
+        return stat;
     }
 
     private calculateItems(
@@ -47,7 +52,7 @@ export class Aggregator {
         }
         ): void {
         const items: Map<string, number> =
-            this.setToMap(this.getCategories(data));
+            this.setToMap(this.getByKey(filed, data));
 
         data.records.forEach(record => {
             const key: string = record[filed];
@@ -68,7 +73,7 @@ export class Aggregator {
         }
     ): void {
         const revenues: Map<string, number> =
-            this.setToMap(this.getCategories(data));
+            this.setToMap(this.getByKey(field, data));
 
         data.records.forEach(record => {
             const price: number = parseInt(record.price, 10);
@@ -83,6 +88,7 @@ export class Aggregator {
 
     private calculateAvgPrice(
         data: ParseResult,
+        field: 'category' | 'country',
         categories: {
             items: {};
             revenue: {};
@@ -90,7 +96,7 @@ export class Aggregator {
         }
         ): void {
         const avgPrices: Map<string, number> =
-            this.setToMap(this.getCategories(data));
+            this.setToMap(this.getByKey(field, data));
 
         const aggregates = new Map<
             string,
@@ -98,13 +104,13 @@ export class Aggregator {
         >();
 
         data.records.forEach(record => {
-            const category: string = record.category;
+            const key: string = record[field];
             const price: number = parseFloat(record.price);
 
             const current: {sum: number, count: number} =
-                aggregates.get(category) || {sum: 0, count: 0};
+                aggregates.get(key) || {sum: 0, count: 0};
 
-            aggregates.set(category, {
+            aggregates.set(key, {
                 sum: current.sum + price,
                 count: current.count + 1
             });
@@ -120,11 +126,12 @@ export class Aggregator {
         return {
             totalItems: 0,
             totalRevenue: 0,
-            categories_count: 0,
-            countries_count: 0,
-            categories_stats: {},
-            countries_stats: {},
-            top_categories: []
+            categoriesCount: 0,
+            countriesCount: 0,
+            categoriesStats: {},
+            countriesStats: {},
+            topCategories: [],
+            topCountriesByRevenue: []
         };
     }
 
@@ -144,11 +151,23 @@ export class Aggregator {
         return data.records.map(rec => parseFloat(rec.price));
     }
 
+    public getByKey(filed: string, data: ParseResult) {
+        return filed === 'category'? this.getCategories(data) : this.getCountries(data);
+    }
+
     public getCategories(data: ParseResult): Set<string> {
         return new Set<string>(data.records.map(r => r.category));
     }
 
     public getCountries(data: ParseResult): Set<string> {
         return new Set<string>(data.records.map(r => r.country));
+    }
+
+    private enterCategoryStatStat(categoryStat: { items: {}; revenue: {}; avgPrice: {} }, total: StatData): void {
+        total.categoriesStats = categoryStat;
+    }
+
+    private enterCountryStatStat(countryStat: { items: {}; revenue: {}; avgPrice: {} }, total: StatData) {
+      total.countriesStats = countryStat;
     }
 }

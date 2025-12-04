@@ -20,7 +20,6 @@ async function main(): Promise<void> {
         if (res.validLines === 0 && res.totalLines > 0) {
             console.warn('All lines in CSV file were invalid');
         }
-
     } catch (error) {
         console.error('Error processing CSV file:', error instanceof Error ? error.message : error);
         process.exit(1);
