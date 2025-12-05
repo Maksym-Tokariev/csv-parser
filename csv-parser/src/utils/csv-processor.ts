@@ -19,21 +19,6 @@ export class CSVProcessor {
         this.filePath = filePath;
     }
 
-    private isFileFound(): boolean {
-        return fs.existsSync(this.filePath);
-    }
-
-    private async initializeFileReader(): Promise<readline.Interface> {
-        if (!this.isFileFound()) {
-            throw new Error(`File not found: ${this.filePath}`);
-        }
-        const fileStream = fs.createReadStream(this.filePath);
-        return readline.createInterface({
-            input: fileStream,
-            crlfDelay: Infinity
-        });
-    }
-
     public async parseCSV(): Promise<ParseResult> {
         const rl = await this.initializeFileReader();
 
@@ -48,6 +33,21 @@ export class CSVProcessor {
         } finally {
             rl.close();
         }
+    }
+
+    private async initializeFileReader(): Promise<readline.Interface> {
+        if (!this.isFileFound()) {
+            throw new Error(`File not found: ${this.filePath}`);
+        }
+        const fileStream = fs.createReadStream(this.filePath);
+        return readline.createInterface({
+            input: fileStream,
+            crlfDelay: Infinity
+        });
+    }
+
+    private isFileFound(): boolean {
+        return fs.existsSync(this.filePath);
     }
 
     private async readHeader(rl: readline.Interface): Promise<string[]> {

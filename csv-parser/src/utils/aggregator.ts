@@ -129,9 +129,7 @@ export class Aggregator {
             categoriesCount: 0,
             countriesCount: 0,
             categoriesStats: {},
-            countriesStats: {},
-            topCategories: [],
-            topCountriesByRevenue: []
+            countriesStats: {}
         };
     }
 
@@ -141,6 +139,7 @@ export class Aggregator {
             items.set(value, 0);
         });
         return items;
+        // return this.sortMapByKeys(items);
     }
 
     public getQuantities(data: ParseResult): number[] {
@@ -170,4 +169,11 @@ export class Aggregator {
     private enterCountryStatStat(countryStat: { items: {}; revenue: {}; avgPrice: {} }, total: StatData) {
       total.countriesStats = countryStat;
     }
+
+    // TODO
+    // private sortMapByKeys(items: Map<string, number>): Map<string, number> {
+    //     return Array.from(items.entries()).sort((a, b) =>
+    //         a[0].localeCompare(b[0])
+    //     );
+    // }
 }

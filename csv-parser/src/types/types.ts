@@ -27,9 +27,15 @@ export interface StatData {
     categoriesCount: number,
     countriesCount: number,
     categoriesStats: {},
-    countriesStats: {},
-    topCategories: [],
-    topCountriesByRevenue: []
+    countriesStats: {}
+}
+
+export interface Report {
+    totalLines: number;
+    validLines: number;
+    invalidLines: number;
+    skippedRows: number,
+    stat: StatData
 }
 
 export type ColumnName = 'id' | 'category' | 'country' | 'price' | 'quantity' | 'sold_at';
