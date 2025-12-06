@@ -30,6 +30,12 @@ export interface StatData {
     countriesStats: {}
 }
 
+export interface DimensionStats {
+    items: Record<string, number>;
+    revenue: Record<string, number>;
+    avgPrice: Record<string, number>;
+}
+
 export interface Report {
     totalLines: number;
     validLines: number;
