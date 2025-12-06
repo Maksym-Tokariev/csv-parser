@@ -6,7 +6,7 @@ export class Writer {
     public createJson(total: ParseResult, stat: StatData, fileName: string) {
         const rep: Report = this.createEmptyReport();
 
-        this.dataCorrelate(total, stat, rep);
+        // this.dataCorrelate(total, stat, rep);
 
         const jsonRep = JSON.stringify(rep);
         fs.writeFile(fileName, jsonRep, 'utf-8', e => {
@@ -34,7 +34,4 @@ export class Writer {
         }
     }
 
-    private dataCorrelate(total: ParseResult, stat: StatData, rep: Report) {
-
-    }
 }

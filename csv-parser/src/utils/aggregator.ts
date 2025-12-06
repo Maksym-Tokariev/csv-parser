@@ -6,11 +6,10 @@ export class Aggregator {
         this.calculateTotalItems(data, total);
         this.calculateTotalRevenue(data, total);
 
-        const categoryStat = this.calculateStat(data, 'category');
-        const countryStat = this.calculateStat(data, 'country');
-        this.enterCategoryStatStat(categoryStat, total);
-        this.enterCountryStatStat(countryStat, total);
-
+        const categoryStat = this.calculateDimensionStats(data, 'category');
+        const countryStat = this.calculateDimensionStats(data, 'country');
+        this.setCategoryStats(categoryStat, total);
+        this.setCountryStats(countryStat, total);
         return total;
     }
 
@@ -29,15 +28,37 @@ export class Aggregator {
         }, 0);
     }
 
-    private calculateStat(data: ParseResult, key: 'category' | 'country') {
+    private calculateDimensionStats(data: ParseResult, key: 'category' | 'country') {
+        const categoriesStat = this.calculateForCategories(data, key = 'category');
+        const countriesStat = this.calculateForCountries(data, key = 'country');
         const stat = {
             items: {},
             revenue: {},
-            avgPrice: {}
+            avgPrice: {},
+            categoriesCount: 0,
+            countriesCount: 0
         }
-        this.calculateItems(data, key, stat)
+
+        this.calculateItems(data, key, stat);
         this.calculateRevenue(data, key, stat);
         this.calculateAvgPrice(data, key, stat);
+        this.calculateCount(data, key, stat);
+        return stat;
+    }
+
+    private calculateForCategories(data: ParseResult, category: string)  {
+        const stat = {
+            items: {},
+            revenue: {},
+            avgPrice: {},
+            categoriesCount: 0
+        }
+        const values: Map<string, number> =
+            this.setToMap(this.getUniqueValuesByField(category, data));
+
+        data.records.forEach(record => {
+
+        });
 
         return stat;
     }
@@ -45,14 +66,14 @@ export class Aggregator {
     private calculateItems(
         data: ParseResult,
         filed: 'category' | 'country',
-        categories: {
+        stat: {
             items: Record<string, number>;
             revenue: Record<string, number>;
             avgPrice: Record<string, number>
         }
         ): void {
         const items: Map<string, number> =
-            this.setToMap(this.getByKey(filed, data));
+            this.setToMap(this.getUniqueValuesByField(filed, data));
 
         data.records.forEach(record => {
             const key: string = record[filed];
@@ -60,43 +81,43 @@ export class Aggregator {
             const currentQuantity: number = items.get(key) || 0;
             items.set(key, currentQuantity + quantity);
         });
-        categories.items = Object.fromEntries(items);
+        stat.items = Object.fromEntries(items);
     }
 
     private calculateRevenue(
         data: ParseResult,
         field: 'category' | 'country',
-        categories: {
+        stat: {
             items: Record<string, number>;
             revenue: Record<string, number>;
             avgPrice: Record<string, number>
         }
     ): void {
         const revenues: Map<string, number> =
-            this.setToMap(this.getByKey(field, data));
+            this.setToMap(this.getUniqueValuesByField(field, data));
 
         data.records.forEach(record => {
-            const price: number = parseInt(record.price, 10);
+            const price: number = parseFloat(record.price);
             const quantity: number = parseFloat(record.quantity);
             const revenue: number = price * quantity;
             const currentRevenue: number = revenues.get(record[field]) || 0;
 
             revenues.set(record[field], currentRevenue + revenue);
         });
-        categories.revenue = Object.fromEntries(revenues);
+        stat.revenue = Object.fromEntries(revenues);
     }
 
     private calculateAvgPrice(
         data: ParseResult,
         field: 'category' | 'country',
-        categories: {
+        stat: {
             items: {};
             revenue: {};
             avgPrice: {}
         }
         ): void {
         const avgPrices: Map<string, number> =
-            this.setToMap(this.getByKey(field, data));
+            this.setToMap(this.getUniqueValuesByField(field, data));
 
         const aggregates = new Map<
             string,
@@ -119,7 +140,65 @@ export class Aggregator {
         aggregates.forEach(({sum, count}, category) => {
             avgPrices.set(category, count > 0 ? sum / count : 0);
         });
-        categories.avgPrice = avgPrices;
+        stat.avgPrice = avgPrices;
+    }
+
+    private calculateCount(
+        data: ParseResult,
+        key: "category" | "country",
+        stat: {
+            items: {};
+            revenue: {};
+            avgPrice: {};
+            categoriesCount: number;
+            countriesCount: number
+        }
+    ): void {
+        stat.categoriesCount = (key === 'category')
+            ? this.getCount(this.getCategories(data))
+            : this.getCount(this.getCountries(data));
+    }
+
+    private getQuantities(data: ParseResult): number[] {
+        return data.records.map(rec  => parseInt(rec.quantity, 10));
+    }
+
+    private getUniqueValuesByField(filed: string, data: ParseResult): Set<string> {
+        return filed === 'category'? this.getCategories(data) : this.getCountries(data);
+    }
+
+    private getCategories(data: ParseResult): Set<string> {
+        return new Set<string>(data.records.map(r => r.category));
+    }
+
+    private getCountries(data: ParseResult): Set<string> {
+        return new Set<string>(data.records.map(r => r.country));
+    }
+
+    private getCount(items: Set<string>): number {
+        return items.size;
+    }
+
+    private setCategoryStats(categoryStat: { items: {}; revenue: {}; avgPrice: {} }, total: StatData): void {
+        total.categoriesStats = categoryStat;
+    }
+
+    private setCountryStats(countryStat: { items: {}; revenue: {}; avgPrice: {} }, total: StatData) {
+      total.countriesStats = countryStat;
+    }
+
+    private setToMap(set: Set<string>): Map<string, number> {
+        const items: Map<string, number> = new Map();
+        set.forEach(value => {
+            items.set(value, 0);
+        });
+        return this.sortMapByKeys(items);
+    }
+
+    private sortMapByKeys(items: Map<string, number>): Map<string, number> {
+        return new Map(Array.from(items.entries())
+            .sort(([a], [b]) => a.localeCompare(b))
+        );
     }
 
     private createEmptyStatData(): StatData {
@@ -132,48 +211,4 @@ export class Aggregator {
             countriesStats: {}
         };
     }
-
-    private setToMap(set: Set<string>): Map<string, number> {
-        const items: Map<string, number> = new Map();
-        set.forEach(value => {
-            items.set(value, 0);
-        });
-        return items;
-        // return this.sortMapByKeys(items);
-    }
-
-    public getQuantities(data: ParseResult): number[] {
-        return data.records.map(rec  => parseInt(rec.quantity, 10));
-    }
-
-    public getPrices(data: ParseResult): number[] {
-        return data.records.map(rec => parseFloat(rec.price));
-    }
-
-    public getByKey(filed: string, data: ParseResult) {
-        return filed === 'category'? this.getCategories(data) : this.getCountries(data);
-    }
-
-    public getCategories(data: ParseResult): Set<string> {
-        return new Set<string>(data.records.map(r => r.category));
-    }
-
-    public getCountries(data: ParseResult): Set<string> {
-        return new Set<string>(data.records.map(r => r.country));
-    }
-
-    private enterCategoryStatStat(categoryStat: { items: {}; revenue: {}; avgPrice: {} }, total: StatData): void {
-        total.categoriesStats = categoryStat;
-    }
-
-    private enterCountryStatStat(countryStat: { items: {}; revenue: {}; avgPrice: {} }, total: StatData) {
-      total.countriesStats = countryStat;
-    }
-
-    // TODO
-    // private sortMapByKeys(items: Map<string, number>): Map<string, number> {
-    //     return Array.from(items.entries()).sort((a, b) =>
-    //         a[0].localeCompare(b[0])
-    //     );
-    // }
 }
