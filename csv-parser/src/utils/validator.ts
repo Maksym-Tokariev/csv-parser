@@ -1,5 +1,5 @@
 import {
-    ARR_OF_COLUMNS,
+    ARR_OF_COLUMNS, DATE_FORMAT, ID_PREFIX,
     MAX_LINE_SIZE,
     NUMBER_OF_COLUMNS
 } from "../config/constants";
@@ -98,7 +98,7 @@ export class Validator {
         let numericPart: string = value;
         let hasPrefix = false;
 
-        if (numericPart.startsWith('P')) {
+        if (numericPart.startsWith(ID_PREFIX)) {
             hasPrefix = true;
             numericPart = value.slice(1);
 
@@ -110,7 +110,7 @@ export class Validator {
         }
         if (!/^\d+$/.test(numericPart)) {
             const message = hasPrefix?
-                `Id with 'P' prefix must contain only number after prefix. Invalid character: ${this.findInvalidChar(numericPart)}`
+                `Id with ${ID_PREFIX} prefix must contain only number after prefix. Invalid character: ${this.findInvalidChar(numericPart)}`
                 : `Id must contain only numbers. Invalid character: ${this.findInvalidChar(numericPart)}`;
             this.reporter.pushError(errors, lineNumber, message, value, fieldName);
             return;
@@ -168,7 +168,7 @@ export class Validator {
         const isoRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
 
         if (!isoRegex.test(value)) {
-            const message = `${fieldName} must be in exact format: YYYY-MM-DDTHH:MM:SSZ`;
+            const message = `${fieldName} must be in exact format: ${DATE_FORMAT}`;
             this.reporter.pushError(errors, lineNumber, message, value, fieldName);
             return;
         }

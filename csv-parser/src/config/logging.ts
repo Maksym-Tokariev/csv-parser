@@ -1,7 +1,13 @@
-import {
-    APP_LOG_LEVEL,
-    LOG_LEVEL
-} from "../types/types";
+export const LOG_LEVEL = {
+    DEBUG: 'debug',
+    INFO: 'info',
+    WARN: 'warn',
+    ERROR: 'error',
+    NONE: 'none'
+} as const;
+
+export type LogLevel = typeof LOG_LEVEL[keyof typeof LOG_LEVEL];
+export const APP_LOG_LEVEL: LogLevel = LOG_LEVEL.INFO;
 
 export const LOG_LEVELS = {
     [LOG_LEVEL.DEBUG]: 0,

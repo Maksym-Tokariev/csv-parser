@@ -4,7 +4,7 @@ import {logger} from "./logger";
 
 export class Writer {
 
-    public createJson(total: ParseResult, stat: StatData, fileName: string) {
+    public async createJson(total: ParseResult, stat: StatData, fileName: string) {
         logger.info('Creating report file...', null, 'Writer.createJson')
         const rep: Report = this.createEmptyReport();
 
@@ -30,8 +30,16 @@ export class Writer {
                 totalRevenue: 0,
                 categoriesCount: 0,
                 countriesCount: 0,
-                categoriesStats: {},
-                countriesStats: {}
+                categoriesStats: {
+                    items: {},
+                    revenue: {},
+                    avgPrice: {},
+                },
+                countriesStats: {
+                    items: {},
+                    revenue: {},
+                    avgPrice: {},
+                }
             }
         }
     }

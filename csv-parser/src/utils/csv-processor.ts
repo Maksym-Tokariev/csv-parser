@@ -7,7 +7,7 @@ import {
 } from '../types/types';
 
 import {
-    FILE_PATH
+    INPUT_FILE_PATH
 } from '../config/constants';
 import { Validator } from "./validator";
 import {logger} from "./logger";
@@ -16,7 +16,7 @@ export class CSVProcessor {
     private readonly filePath: string;
     private readonly validator: Validator = new Validator();
 
-    constructor(filePath: string = FILE_PATH) {
+    constructor(filePath: string = INPUT_FILE_PATH) {
         this.filePath = filePath;
     }
 
