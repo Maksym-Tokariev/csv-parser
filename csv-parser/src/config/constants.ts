@@ -6,3 +6,4 @@ export const ARR_OF_COLUMNS: readonly string[] = [
 ] as const;
 export const MAX_LINE_SIZE = 30;
 export const NUMBER_OF_COLUMNS = 6;
+export const RESULT_FILE_PATH = '../results/report.json';

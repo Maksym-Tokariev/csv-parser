@@ -13,7 +13,7 @@ import { Validator } from "./validator";
 
 export class CSVProcessor {
     private readonly filePath: string;
-    private readonly validator: Validator = Validator.prototype;
+    private readonly validator: Validator = new Validator();
 
     constructor(filePath: string = FILE_PATH) {
         this.filePath = filePath;
@@ -79,9 +79,8 @@ export class CSVProcessor {
             result.invalidLines++;
             return
         }
-
         const record = this.createRecord(values);
-        console.debug(record);
+
         result.records.push(record);
         result.validLines++;
     }

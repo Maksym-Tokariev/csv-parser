@@ -1,12 +1,12 @@
 import * as fs from "node:fs";
-import {ParseResult, Report, StatData} from "../types/types";
+import { ParseResult, Report, StatData } from "../types/types";
 
 export class Writer {
 
     public createJson(total: ParseResult, stat: StatData, fileName: string) {
         const rep: Report = this.createEmptyReport();
 
-        // this.dataCorrelate(total, stat, rep);
+        this.setReportData(total, stat, rep);
 
         const jsonRep = JSON.stringify(rep);
         fs.writeFile(fileName, jsonRep, 'utf-8', e => {
@@ -34,4 +34,16 @@ export class Writer {
         }
     }
 
+    private setReportData(total: ParseResult, stat: StatData, rep: Report) {
+        rep.totalLines = total.totalLines;
+        rep.validLines = total.validLines
+        rep.invalidLines = total.invalidLines;
+        rep.skippedRows = total.invalidLines;
+        rep.stat.totalItems = stat.totalItems;
+        rep.stat.totalRevenue = stat.totalRevenue;
+        rep.stat.countriesCount = stat.countriesCount;
+        rep.stat.categoriesCount = stat.categoriesCount;
+        rep.stat.categoriesStats = stat.categoriesStats;
+        rep.stat.countriesStats = stat.countriesStats;
+    }
 }
