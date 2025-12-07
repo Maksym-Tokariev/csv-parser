@@ -43,5 +43,14 @@ export interface Report {
     skippedRows: number,
     stat: StatData
 }
-
 export type ColumnName = 'id' | 'category' | 'country' | 'price' | 'quantity' | 'sold_at';
+export const LOG_LEVEL = {
+    DEBUG: 'debug',
+    INFO: 'info',
+    WARN: 'warn',
+    ERROR: 'error',
+    NONE: 'none'
+} as const;
+
+export type LogLevel = typeof LOG_LEVEL[keyof typeof LOG_LEVEL];
+export const APP_LOG_LEVEL: LogLevel = LOG_LEVEL.INFO;
