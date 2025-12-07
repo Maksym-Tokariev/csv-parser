@@ -6,6 +6,7 @@ import {
     StatData
 } from "./types/types";
 import {RESULT_FILE_PATH} from "./config/constants";
+import {logger} from "./utils/logger";
 
 async function main(): Promise<void> {
     try {
@@ -15,14 +16,10 @@ async function main(): Promise<void> {
         const res: ParseResult = await processor.parseCSV();
         const stat: StatData = await aggregator.aggregateData(res);
 
-        if (res.validLines === 0 && res.totalLines > 0) {
-            console.warn('All lines in CSV file were invalid');
-        }
         Writer.prototype.createJson(res, stat, RESULT_FILE_PATH);
     } catch (error) {
-        console.error('Error processing CSV file:', error instanceof Error ? error.message : error);
+        logger.error('', error, 'main');
         process.exit(1);
     }
 }
-
 main();

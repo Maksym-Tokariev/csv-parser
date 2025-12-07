@@ -5,6 +5,7 @@ import {
 } from "../config/constants";
 import {ValidationError} from "../types/types";
 import {ErrorReporter} from "./errorReporter";
+import {logger} from "./logger";
 
 export class Validator {
 
@@ -16,15 +17,16 @@ export class Validator {
         });
         if (!isHeaderValid) {
             const missing = ARR_OF_COLUMNS.filter(col => !header.includes(col));
-            throw new Error(`Some required fields are missing: ${missing.join(', ')}`);
+            logger.error('Some required fields are missing:',
+                missing.join(', '), 'Validator.isHeaderCorrect');
         }
+        logger.debug('Header is valid', header, 'Validator.isHeaderCorrect');
         return true;
     }
 
     public validateLine(values: string[], lineNumber: number): boolean {
+        logger.debug('Start validation', null, 'Validator.validateLine');
         const errors: ValidationError[] = [];
-
-
         this.validateNumberOfColumns(errors, values, lineNumber);
 
         values.forEach((value, index) => {
@@ -62,15 +64,11 @@ export class Validator {
     }
 
     private hasInvalidSpecialChars(value: string): boolean {
-        return /[@#$%^&*()_+=\[\]{}|;:"<>?~]/.test(value);
+        return /[@#$%^*()_+=\[\]{}|;:"<>?~]/.test(value);
     }
 
     private hasDigit(value: string): boolean {
         return /\d/.test(value);
-    }
-
-    private isValidString(value: string): boolean {
-        return /^[\p{L}\p{N}\s\-'.]+$/u.test(value);
     }
 
     private validateNumberOfColumns(errors: ValidationError[], values: string[], lineNumber: number): void {
@@ -110,7 +108,6 @@ export class Validator {
                 return;
             }
         }
-
         if (!/^\d+$/.test(numericPart)) {
             const message = hasPrefix?
                 `Id with 'P' prefix must contain only number after prefix. Invalid character: ${this.findInvalidChar(numericPart)}`
@@ -121,11 +118,11 @@ export class Validator {
         const numId = parseInt(numericPart, 10);
         if (numId <= 0) {
             const message = 'Id must be positive number';
+            logger.warn(`Invalid ID format: ${value}`, {lineNumber})
             this.reporter.pushError(errors, lineNumber, message, value, fieldName);
             return;
         }
-
-        console.debug(`${fieldName} ${value} is valid`);
+        logger.debug(`${fieldName} ${value} is valid`, null, 'Validator.validateId');
     }
 
     private validatePrice(errors: ValidationError[], lineNumber: number, value: string, fieldName: string = 'price'): void {
@@ -147,7 +144,7 @@ export class Validator {
             this.reporter.pushError(errors, lineNumber, message, value, 'price')
             return;
         }
-        console.debug(`${fieldName} ${value} is valid`);
+        logger.debug(`${fieldName} ${value} is valid`, null, 'Validator.validatePrice');
     }
 
     private validateQuantity(errors: ValidationError[], lineNumber: number, value: string, fieldName: string = 'quantity'): void {
@@ -163,7 +160,8 @@ export class Validator {
             this.reporter.pushError(errors, lineNumber, message, value, fieldName);
             return;
         }
-        console.debug(`${fieldName} ${value} is valid`);
+        logger.debug(`${fieldName} ${value} is valid`, null, 'Validator.validateQuantity');
+
     }
 
     private validateSoldAt(errors: ValidationError[], lineNumber: number, value: string, fieldName: string = 'sold_at'): void {
@@ -180,7 +178,7 @@ export class Validator {
             this.reporter.pushError(errors, lineNumber, message, value, fieldName);
             return;
         }
-        console.debug(`${fieldName} [${value}] is valid`);
+        logger.debug(`${fieldName} ${value} is valid`, null, 'Validator.validateSoldAt');
     }
 
     private validateStringValue(error: ValidationError[], lineNumber: number, value: string, fieldName: string): void {
@@ -195,6 +193,7 @@ export class Validator {
             this.reporter.pushError(error, lineNumber, message, value, fieldName);
             return;
         }
+        logger.debug(`${fieldName} ${value} is valid`, null, 'Validator.validateSoldAt');
     }
 
     private findInvalidChar(str: string): string {
