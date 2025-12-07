@@ -1,7 +1,9 @@
 import {ParseResult, StatData, DimensionStats} from "../types/types";
+import {logger} from "./logger";
 
 export class Aggregator {
     public async aggregateData(data: ParseResult): Promise<StatData> {
+        logger.info('Start of aggregation', null, 'Aggregator.aggregateData')
         const total: StatData = this.createEmptyStatData();
         this.calculateTotalItems(data, total);
         this.calculateTotalRevenue(data, total);
@@ -12,12 +14,14 @@ export class Aggregator {
         this.setCategoryStats(categoryStat, total);
         this.setCountryStats(countryStat, total);
 
+        logger.info('Aggregation completed', null, 'Aggregator.aggregateData');
         return total;
     }
 
     private calculateTotalItems(data: ParseResult, totalStat: StatData): void {
         totalStat.totalItems = data.records.reduce((sum, record) =>
             sum + parseInt(record.quantity, 10), 0);
+        logger.debug(`Total items [${totalStat.totalItems}]`)
     }
 
     private calculateTotalRevenue(data: ParseResult, totalStat: StatData): void {
@@ -26,6 +30,7 @@ export class Aggregator {
             const quantity = parseInt(record.quantity, 10);
             return sum + (price * quantity);
         }, 0);
+        logger.debug(`Total revenue [${totalStat.totalRevenue}]`);
     }
 
     private calculateDimensionStats(

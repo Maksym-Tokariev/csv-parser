@@ -1,9 +1,11 @@
 import * as fs from "node:fs";
 import { ParseResult, Report, StatData } from "../types/types";
+import {logger} from "./logger";
 
 export class Writer {
 
     public createJson(total: ParseResult, stat: StatData, fileName: string) {
+        logger.info('Creating report file...', null, 'Writer.createJson')
         const rep: Report = this.createEmptyReport();
 
         this.setReportData(total, stat, rep);
@@ -11,9 +13,9 @@ export class Writer {
         const jsonRep = JSON.stringify(rep);
         fs.writeFile(fileName, jsonRep, 'utf-8', e => {
             if (e) {
-                console.log(e)
+                logger.error(e.message, e, 'Writer.createJson');
             } else
-                console.log('File has been created');
+                logger.info('File has been created', fileName, 'Writer.createJson');
         });
     }
 

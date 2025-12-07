@@ -1,4 +1,5 @@
 import {ValidationError} from "../types/types";
+import {logger} from "./logger";
 
 export class ErrorReporter {
 
@@ -16,11 +17,10 @@ export class ErrorReporter {
 
     public reportError(errors: ValidationError[]): void {
         errors.forEach(e => {
-            console.log('=== Error ===');
-            console.warn(`Line ${e.lineNumber}: ${e.message}`);
+            logger.warn(`Line ${e.lineNumber}: ${e.message}`, null, 'ValidationError');
             if (e.field) {
-                console.warn(`  Field: ${e.field}, Value: "${e.value}"`);
-                console.warn(`The Line with ${e.value} was skipped`);
+                logger.warn(`  Field: ${e.field}, Value: "${e.value}"`, null, 'ValidationError');
+                logger.warn(`The Line with ${e.value} was skipped`, null, 'ValidationError');
             }
         });
     }

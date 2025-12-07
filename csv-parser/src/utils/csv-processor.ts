@@ -10,6 +10,7 @@ import {
     FILE_PATH
 } from '../config/constants';
 import { Validator } from "./validator";
+import {logger} from "./logger";
 
 export class CSVProcessor {
     private readonly filePath: string;
@@ -21,7 +22,7 @@ export class CSVProcessor {
 
     public async parseCSV(): Promise<ParseResult> {
         const rl = await this.initializeFileReader();
-
+        logger.info('Start of parsing', this.filePath, 'CSVProcessor.parseCSV')
         try {
             const header: string[] = await this.readHeader(rl);
 
@@ -32,14 +33,18 @@ export class CSVProcessor {
             return await this.processDataLines(rl);
         } finally {
             rl.close();
+            logger.debug('Stream closed', null, 'CSVProcessor.parseCSV');
         }
     }
 
     private async initializeFileReader(): Promise<readline.Interface> {
         if (!this.isFileFound()) {
-            throw new Error(`File not found: ${this.filePath}`);
+            const error = new Error('File not found')
+            logger.error(error.message, this.filePath, 'CVSProcessor.initializeFileReader');
+            throw error;
         }
         const fileStream = fs.createReadStream(this.filePath);
+        logger.info('Reader was initialized', null, 'CVSProcessor.initializeFileReader');
         return readline.createInterface({
             input: fileStream,
             crlfDelay: Infinity
@@ -54,8 +59,12 @@ export class CSVProcessor {
         const iterator = rl[Symbol.asyncIterator]();
         const headerResult = await iterator.next();
 
-        if (headerResult.done) throw new Error('CSV file is empty');
-
+        if (headerResult.done) {
+            const error = new Error('CSV file is empty');
+            logger.error('CSV file is empty', error, 'CSVProcessor.readHeader');
+            rl.close();
+            throw error;
+        }
         return headerResult.value.split(',');
     }
 
@@ -63,11 +72,14 @@ export class CSVProcessor {
         const result: ParseResult = this.createEmptyResult();
         let lineNumber: number = 1;
 
+        logger.info('Process line', null, 'CSVProcessor.processDataLines')
         for await (const line of rl) {
             lineNumber++;
             result.totalLines++;
+            logger.debug('Process line:\n', line, 'CSVProcessor.processDataLines');
             await this.processLine(line, lineNumber, result);
         }
+        logger.info('Validation completed', null, 'CSVProcessor.processDataLines')
         return result;
     }
 
@@ -77,9 +89,11 @@ export class CSVProcessor {
 
         if (hasValidationErrors) {
             result.invalidLines++;
+            logger.warn('Invalid line values: ', line, 'CSVProcessor.processLine')
             return
         }
         const record = this.createRecord(values);
+        logger.debug('Record added\n', record, 'CSVProcessor.processLine');
 
         result.records.push(record);
         result.validLines++;

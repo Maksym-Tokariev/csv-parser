@@ -16,6 +16,5 @@ export const LOGGER_CONFIG = {
     showTimestamp: true,
     showLevel: true,
     showContext: true,
-    useColors: true,
     maxMessageLen: 1000
 };
