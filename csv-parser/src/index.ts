@@ -34,7 +34,7 @@ class Application {
 
             const duration = Date.now() - startTime;
             logger.info(`Processing completed in ${duration}ms`, null, 'Application');
-        } catch (error) {
+        } catch (error: any) {
             logger.error('Application failed', {
                 error: error.message,
                 stack: error,

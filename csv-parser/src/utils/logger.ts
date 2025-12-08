@@ -1,5 +1,4 @@
-import {LOG_LEVEL, LogLevel} from "../types/types";
-import {LOG_LEVELS, LOGGER_CONFIG} from "../config/logging";
+import {LOG_LEVEL, LOG_LEVELS, LOGGER_CONFIG, LogLevel} from "../config/logging";
 
 export class Logger {
     private static instance: Logger;
