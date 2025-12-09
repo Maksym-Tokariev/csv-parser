@@ -6,6 +6,7 @@ import {
 import {ValidationError} from "../types/types";
 import {ErrorReporter} from "./errorReporter";
 import {logger} from "./logger";
+import {VALIDATOR_CONFIG} from "../config/validatorConfig";
 
 export class Validator {
 
@@ -16,9 +17,13 @@ export class Validator {
             return header.includes(col);
         });
         if (!isHeaderValid) {
-            const missing = ARR_OF_COLUMNS.filter(col => !header.includes(col));
-            logger.error('Some required fields are missing:',
-                missing.join(', '), 'Validator.isHeaderCorrect');
+            const missing: string[] = ARR_OF_COLUMNS.filter(col => !header.includes(col));
+            logger.error('Some required fields are missing:', {
+                missing: missing.join(', '),
+                expected: ARR_OF_COLUMNS,
+                actual: header
+            } , 'Validator.isHeaderCorrect');
+            return false;
         }
         logger.debug('Header is valid', header, 'Validator.isHeaderCorrect');
         return true;
@@ -32,7 +37,9 @@ export class Validator {
         values.forEach((value, index) => {
             const fieldName = ARR_OF_COLUMNS[index];
 
-            this.validateEmptyLine(errors, value, lineNumber, fieldName);
+            if (VALIDATOR_CONFIG.validateEmptyLines) {
+                this.validateEmptyLine(errors, value, lineNumber, fieldName)
+            }
             this.validateLineLength(errors, value, lineNumber, fieldName);
 
             if (!this.reporter.hasError(errors)) {
@@ -46,19 +53,29 @@ export class Validator {
     private validateValue(error: ValidationError[], value: string, lineNumber: number, fieldName: string): void {
         switch (fieldName) {
             case 'id':
-                this.validateId(error, lineNumber, value);
+                if (VALIDATOR_CONFIG.validateId) {
+                    this.validateId(error, lineNumber, value);
+                }
                 break;
             case 'price':
-                this.validatePrice(error, lineNumber, value);
+                if (VALIDATOR_CONFIG.validatePrice) {
+                    this.validatePrice(error, lineNumber, value);
+                }
                 break;
             case 'quantity':
-                this.validateQuantity(error, lineNumber, value);
+                if (VALIDATOR_CONFIG.validateQuantity) {
+                    this.validateQuantity(error, lineNumber, value);
+                }
                 break;
             case 'sold_at':
-                this.validateSoldAt(error, lineNumber, value);
+                if (VALIDATOR_CONFIG.validateSoldAt) {
+                    this.validateSoldAt(error, lineNumber, value);
+                }
                 break;
             default:
-                this.validateStringValue(error, lineNumber, value, fieldName);
+                if (VALIDATOR_CONFIG.validateStringValues) {
+                    this.validateStringValue(error, lineNumber, value, fieldName);
+                }
                 break;
         }
     }
@@ -104,6 +121,8 @@ export class Validator {
 
             if (numericPart.length === 0) {
                 const message = `Id must contain numbers after 'P' prefix`;
+                logger.warn(`Empty numeric part of id: ${value}`,
+                    lineNumber, 'Validator.validateId');
                 this.reporter.pushError(errors, lineNumber, message, value, fieldName);
                 return;
             }
@@ -112,13 +131,14 @@ export class Validator {
             const message = hasPrefix?
                 `Id with ${ID_PREFIX} prefix must contain only number after prefix. Invalid character: ${this.findInvalidChar(numericPart)}`
                 : `Id must contain only numbers. Invalid character: ${this.findInvalidChar(numericPart)}`;
+            logger.warn(`Invalid character in id [${value}]`, null, 'Validator.validateId');
             this.reporter.pushError(errors, lineNumber, message, value, fieldName);
             return;
         }
         const numId = parseInt(numericPart, 10);
         if (numId <= 0) {
             const message = 'Id must be positive number';
-            logger.warn(`Invalid ID format: ${value}`, {lineNumber})
+            logger.warn(`Invalid ID format: ${value}`, lineNumber, 'Validator.validateId')
             this.reporter.pushError(errors, lineNumber, message, value, fieldName);
             return;
         }
@@ -139,6 +159,12 @@ export class Validator {
             return
         }
 
+        if (VALIDATOR_CONFIG.maxPrice && (price >= VALIDATOR_CONFIG.maxPrice)) {
+            const message = `The price value must be less then ${VALIDATOR_CONFIG.maxPrice}`;
+            this.reporter.pushError(errors, lineNumber, message, value, fieldName);
+            return;
+        }
+
         if (price < 0) {
             const message = 'Price cannot be negative';
             this.reporter.pushError(errors, lineNumber, message, value, 'price')
@@ -155,6 +181,12 @@ export class Validator {
             return;
         }
         const quantity: number = parseInt(value, 10);
+        if (VALIDATOR_CONFIG.maxQuantity && (quantity > VALIDATOR_CONFIG.maxQuantity)) {
+            const message = `The quantity value must be less then ${VALIDATOR_CONFIG.maxQuantity}`;
+            this.reporter.pushError(errors, lineNumber, message, value, fieldName);
+            return;
+        }
+
         if (quantity === 0) {
             const message = 'Quantity cannot be zero';
             this.reporter.pushError(errors, lineNumber, message, value, fieldName);
@@ -193,7 +225,7 @@ export class Validator {
             this.reporter.pushError(error, lineNumber, message, value, fieldName);
             return;
         }
-        logger.debug(`${fieldName} ${value} is valid`, null, 'Validator.validateSoldAt');
+        logger.debug(`${fieldName} ${value} is valid`, null, 'Validator.validateStringValue');
     }
 
     private findInvalidChar(str: string): string {

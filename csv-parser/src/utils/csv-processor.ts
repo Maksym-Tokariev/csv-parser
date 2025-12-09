@@ -29,7 +29,7 @@ export class CSVProcessor {
             const header: string[] = await this.readHeader(rl);
 
             if (!this.validator.isHeaderCorrect(header)) {
-                return this.createEmptyResult();
+                throw new Error('Invalid header');
             }
 
             return await this.processDataLines(rl);
