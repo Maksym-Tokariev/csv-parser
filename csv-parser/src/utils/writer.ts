@@ -1,22 +1,40 @@
 import * as fs from "node:fs";
 import { ParseResult, Report, StatData } from "../types/types";
 import {logger} from "./logger";
+import path from "node:path";
+import {RESULTS_DIR} from "../config/constants";
 
 export class Writer {
 
-    public async createJson(total: ParseResult, stat: StatData, fileName: string) {
-        logger.info('Creating report file...', null, 'Writer.createJson')
-        const rep: Report = this.createEmptyReport();
+    public async createJson(total: ParseResult, stat: StatData, fileName: string): Promise<void> {
+        logger.info('Creating report file...', null, 'Writer.createJson');
+        try {
+            await this.checkDirectoryExistence();
+            const rep: Report = this.createEmptyReport();
 
-        this.setReportData(total, stat, rep);
+            this.setReportData(total, stat, rep);
 
-        const jsonRep = JSON.stringify(rep);
-        fs.writeFile(fileName, jsonRep, 'utf-8', e => {
-            if (e) {
-                logger.error(e.message, e, 'Writer.createJson');
-            } else
-                logger.info('File has been created', fileName, 'Writer.createJson');
-        });
+            const jsonRep = JSON.stringify(rep, null, 2);
+
+            fs.writeFile(fileName, jsonRep, 'utf-8', e => {
+                if (e) {
+                    logger.error(e.message, e, 'Writer.createJson');
+                } else
+                    logger.info('File has been created', fileName, 'Writer.createJson');
+            });
+            logger.info('Report file created successfully', {
+                fileName,
+                fileSize: `${(jsonRep.length / 1024).toFixed(2)} KB`,
+                path: path.resolve(fileName)
+            }, 'Writer.createJson');
+        } catch (error: any) {
+            logger.error('Failed to create report file', {
+                fileName,
+                error: error.message,
+                stack: error.stack
+            }, 'Writer.createJson');
+            throw new Error(`Failed to write report: ${error.message}`)
+        }
     }
 
     private createEmptyReport(): Report {
@@ -55,5 +73,17 @@ export class Writer {
         rep.stat.categoriesCount = stat.categoriesCount;
         rep.stat.categoriesStats = stat.categoriesStats;
         rep.stat.countriesStats = stat.countriesStats;
+    }
+
+    private async checkDirectoryExistence(): Promise<boolean> {
+        const dir: string = RESULTS_DIR;
+        try {
+            await fs.promises.access(dir, fs.constants.W_OK);
+            logger.debug('Directory exists and is writable', dir, 'Writer.ensureDirectoryExists');
+            return true;
+        } catch (error) {
+            logger.error('Directory not found', dir , 'Writer.isDirectoryExists');
+            throw new Error;
+        }
     }
 }

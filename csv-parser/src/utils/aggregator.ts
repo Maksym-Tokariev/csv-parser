@@ -21,7 +21,7 @@ export class Aggregator {
     private calculateTotalItems(data: ParseResult, totalStat: StatData): void {
         totalStat.totalItems = data.records.reduce((sum, record) =>
             sum + parseInt(record.quantity, 10), 0);
-        logger.debug(`Total items [${totalStat.totalItems}]`)
+        logger.debug(`Total items [${totalStat.totalItems}]`);
     }
 
     private calculateTotalRevenue(data: ParseResult, totalStat: StatData): void {
