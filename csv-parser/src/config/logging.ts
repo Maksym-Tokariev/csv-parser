@@ -7,7 +7,7 @@ export const LOG_LEVEL = {
 } as const;
 
 export type LogLevel = typeof LOG_LEVEL[keyof typeof LOG_LEVEL];
-export const APP_LOG_LEVEL: LogLevel = LOG_LEVEL.DEBUG;
+export const APP_LOG_LEVEL: LogLevel = LOG_LEVEL.INFO;
 
 export const LOG_LEVELS = {
     [LOG_LEVEL.DEBUG]: 0,

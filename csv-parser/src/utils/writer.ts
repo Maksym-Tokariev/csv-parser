@@ -25,7 +25,7 @@ export class Writer {
                 if (e) {
                     logger.error(e.message, e, this.context);
                 } else
-                    logger.info('File has been created', fileName, this.context);
+                    logger.info('File has been created: ', fileName, this.context);
             });
             logger.info('Report file created successfully', {
                 fileName,

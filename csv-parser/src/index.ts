@@ -5,7 +5,7 @@ import {
     ParseResult,
     StatData
 } from "./types/types";
-import {INPUT_FILE_PATH, RESULT_FILE_PATH} from "./config/constants";
+import {INPUT_FILE_PATH, RESULT_FILE_NAME, RESULT_FILE_PATH} from "./config/constants";
 import {logger} from "./utils/logger";
 
 class Application {
@@ -33,7 +33,7 @@ class Application {
 
             const parseResult: ParseResult = await this.processor.parseCSV();
             const stats: StatData = await this.aggregator.aggregateData(parseResult);
-            await this.writer.createJson(parseResult, stats, RESULT_FILE_PATH);
+            await this.writer.createJson(parseResult, stats, RESULT_FILE_NAME);
 
             const duration = Date.now() - startTime;
             logger.info(`Processing completed in ${duration}ms`, null, this.context);
