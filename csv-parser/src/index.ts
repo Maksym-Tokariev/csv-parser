@@ -12,11 +12,14 @@ class Application {
     private readonly processor: CSVProcessor;
     private readonly aggregator: Aggregator;
     private readonly writer: Writer;
+    private readonly context: string;
 
-    constructor() {
+
+    constructor(context: string = 'Application') {
         this.processor = new CSVProcessor();
         this.aggregator = new Aggregator();
         this.writer = new Writer();
+        this.context = context;
     }
 
     async run(): Promise<void> {
@@ -33,7 +36,7 @@ class Application {
             await this.writer.createJson(parseResult, stats, RESULT_FILE_PATH);
 
             const duration = Date.now() - startTime;
-            logger.info(`Processing completed in ${duration}ms`, null, 'Application');
+            logger.info(`Processing completed in ${duration}ms`, null, this.context);
         } catch (error: any) {
             logger.error('Application failed', {
                 error: error.message,

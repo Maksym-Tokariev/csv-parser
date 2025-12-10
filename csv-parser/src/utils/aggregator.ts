@@ -2,8 +2,14 @@ import {ParseResult, StatData, DimensionStats} from "../types/types";
 import {logger} from "./logger";
 
 export class Aggregator {
+    private readonly context: string;
+
+    constructor(context: string = 'Aggregator') {
+        this.context = context;
+    }
+
     public async aggregateData(data: ParseResult): Promise<StatData> {
-        logger.info('Start of aggregation', null, 'Aggregator.aggregateData')
+        logger.info('Start of aggregation', null, this.context)
         const total: StatData = this.createEmptyStatData();
         this.calculateTotalItems(data, total);
         this.calculateTotalRevenue(data, total);
@@ -14,7 +20,7 @@ export class Aggregator {
         this.setCategoryStats(categoryStat, total);
         this.setCountryStats(countryStat, total);
 
-        logger.info('Aggregation completed', null, 'Aggregator.aggregateData');
+        logger.info('Aggregation completed', null, this.context);
         return total;
     }
 
@@ -30,7 +36,7 @@ export class Aggregator {
             const quantity = parseInt(record.quantity, 10);
             return sum + (price * quantity);
         }, 0);
-        logger.debug(`Total revenue [${totalStat.totalRevenue}]`);
+        logger.debug(`Total revenue [${totalStat.totalRevenue}]`, null, this.context);
     }
 
     private calculateDimensionStats(

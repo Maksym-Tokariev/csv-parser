@@ -5,9 +5,14 @@ import path from "node:path";
 import {RESULTS_DIR} from "../config/constants";
 
 export class Writer {
+    private readonly context: string;
+
+    constructor(context: string = 'Writer') {
+        this.context = context;
+    }
 
     public async createJson(total: ParseResult, stat: StatData, fileName: string): Promise<void> {
-        logger.info('Creating report file...', null, 'Writer.createJson');
+        logger.info('Creating report file...', null, this.context);
         try {
             await this.checkDirectoryExistence();
             const rep: Report = this.createEmptyReport();
@@ -18,21 +23,21 @@ export class Writer {
 
             fs.writeFile(fileName, jsonRep, 'utf-8', e => {
                 if (e) {
-                    logger.error(e.message, e, 'Writer.createJson');
+                    logger.error(e.message, e, this.context);
                 } else
-                    logger.info('File has been created', fileName, 'Writer.createJson');
+                    logger.info('File has been created', fileName, this.context);
             });
             logger.info('Report file created successfully', {
                 fileName,
                 fileSize: `${(jsonRep.length / 1024).toFixed(2)} KB`,
                 path: path.resolve(fileName)
-            }, 'Writer.createJson');
+            }, this.context);
         } catch (error: any) {
             logger.error('Failed to create report file', {
                 fileName,
                 error: error.message,
                 stack: error.stack
-            }, 'Writer.createJson');
+            }, this.context);
             throw new Error(`Failed to write report: ${error.message}`)
         }
     }
@@ -79,10 +84,10 @@ export class Writer {
         const dir: string = RESULTS_DIR;
         try {
             await fs.promises.access(dir, fs.constants.W_OK);
-            logger.debug('Directory exists and is writable', dir, 'Writer.ensureDirectoryExists');
+            logger.debug('Directory exists and is writable', dir, this.context);
             return true;
         } catch (error) {
-            logger.error('Directory not found', dir , 'Writer.isDirectoryExists');
+            logger.error('Directory not found', dir , this.context);
             throw new Error;
         }
     }

@@ -11,6 +11,11 @@ import {VALIDATOR_CONFIG} from "../config/validatorConfig";
 export class Validator {
 
     private readonly reporter: ErrorReporter = new ErrorReporter();
+    private readonly context: string;
+
+    constructor(context: string = 'Validator') {
+        this.context = context;
+    }
 
     public isHeaderCorrect(header: string[]): boolean {
         const isHeaderValid = ARR_OF_COLUMNS.every((col: string) => {
@@ -22,15 +27,15 @@ export class Validator {
                 missing: missing.join(', '),
                 expected: ARR_OF_COLUMNS,
                 actual: header
-            } , 'Validator.isHeaderCorrect');
+            } , this.context);
             return false;
         }
-        logger.debug('Header is valid', header, 'Validator.isHeaderCorrect');
+        logger.debug('Header is valid', header, this.context);
         return true;
     }
 
     public validateLine(values: string[], lineNumber: number): boolean {
-        logger.debug('Start validation', null, 'Validator.validateLine');
+        logger.debug('Start validation', null, this.context);
         const errors: ValidationError[] = [];
         this.validateNumberOfColumns(errors, values, lineNumber);
 
@@ -122,7 +127,7 @@ export class Validator {
             if (numericPart.length === 0) {
                 const message = `Id must contain numbers after 'P' prefix`;
                 logger.warn(`Empty numeric part of id: ${value}`,
-                    lineNumber, 'Validator.validateId');
+                    lineNumber, this.context);
                 this.reporter.pushError(errors, lineNumber, message, value, fieldName);
                 return;
             }
@@ -170,7 +175,7 @@ export class Validator {
             this.reporter.pushError(errors, lineNumber, message, value, 'price')
             return;
         }
-        logger.debug(`${fieldName} ${value} is valid`, null, 'Validator.validatePrice');
+        logger.debug(`${fieldName} ${value} is valid`, null, this.context);
     }
 
     private validateQuantity(errors: ValidationError[], lineNumber: number, value: string, fieldName: string = 'quantity'): void {
@@ -192,7 +197,7 @@ export class Validator {
             this.reporter.pushError(errors, lineNumber, message, value, fieldName);
             return;
         }
-        logger.debug(`${fieldName} ${value} is valid`, null, 'Validator.validateQuantity');
+        logger.debug(`${fieldName} ${value} is valid`, null, this.context);
 
     }
 
@@ -210,7 +215,7 @@ export class Validator {
             this.reporter.pushError(errors, lineNumber, message, value, fieldName);
             return;
         }
-        logger.debug(`${fieldName} ${value} is valid`, null, 'Validator.validateSoldAt');
+        logger.debug(`${fieldName} ${value} is valid`, null, this.context);
     }
 
     private validateStringValue(error: ValidationError[], lineNumber: number, value: string, fieldName: string): void {
@@ -225,7 +230,7 @@ export class Validator {
             this.reporter.pushError(error, lineNumber, message, value, fieldName);
             return;
         }
-        logger.debug(`${fieldName} ${value} is valid`, null, 'Validator.validateStringValue');
+        logger.debug(`${fieldName} ${value} is valid`, null, this.context);
     }
 
     private findInvalidChar(str: string): string {

@@ -2,6 +2,11 @@ import {ValidationError} from "../types/types";
 import {logger} from "./logger";
 
 export class ErrorReporter {
+    private readonly context: string;
+
+    constructor(context: string = 'ErrorReporter') {
+        this.context = context;
+    }
 
     public pushError(errors: ValidationError[], lineNumber: number, message: string, value: string = '', fieldName?: string,): void {
         const error: ValidationError = {
@@ -16,12 +21,23 @@ export class ErrorReporter {
     }
 
     public reportError(errors: ValidationError[]): void {
-        errors.forEach(e => {
-            logger.warn(`Line ${e.lineNumber}: ${e.message}`, null, 'ValidationError');
-            if (e.field) {
-                logger.warn(`  Field: ${e.field}, Value: "${e.value}"`, null, 'ValidationError');
-                logger.warn(`The Line with ${e.value} was skipped`, null, 'ValidationError');
-            }
+        if (errors.length === 0) {
+            return;
+        }
+
+        logger.warn(`Found validation error`,
+            new Set(errors.map(e => e.lineNumber)).size,
+            this.context);
+
+        errors.forEach((error, index) => {
+            const logData = {
+                errorNumber: index + 1,
+                lineNumber: error.lineNumber,
+                field: error.field,
+                value: error.value?.substring(0, 100)
+            };
+
+            logger.warn(error.message, logData, `${this.context}.Detail`);
         });
     }
 
