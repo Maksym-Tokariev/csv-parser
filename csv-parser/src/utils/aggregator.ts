@@ -1,5 +1,6 @@
 import {ParseResult, StatData, DimensionStats} from "../types/types";
 import {logger} from "./logger";
+import {AGGREGATION_CONFIG} from "../config/aggregation";
 
 export class Aggregator {
     private readonly context: string;
@@ -11,26 +12,30 @@ export class Aggregator {
     public async aggregateData(data: ParseResult): Promise<StatData> {
         logger.info('Start of aggregation', null, this.context)
         const total: StatData = this.createEmptyStatData();
-        this.calculateTotalItems(data, total);
-        this.calculateTotalRevenue(data, total);
+        if (AGGREGATION_CONFIG.performAggregation) {
+            this.calculateTotalItems(data, total);
+            this.calculateTotalRevenue(data, total);
 
-        const categoryStat = this.calculateDimensionStats(data, 'category');
-        const countryStat = this.calculateDimensionStats(data, 'country');
+            const categoryStat = this.calculateDimensionStats(data, 'category');
+            const countryStat = this.calculateDimensionStats(data, 'country');
 
-        this.setCategoryStats(categoryStat, total);
-        this.setCountryStats(countryStat, total);
+            this.setCategoryStats(categoryStat, total);
+            this.setCountryStats(countryStat, total);
 
-        logger.info('Aggregation completed', null, this.context);
+            logger.info('Aggregation completed', null, this.context);
+        }
         return total;
     }
 
     private calculateTotalItems(data: ParseResult, totalStat: StatData): void {
+        if (!AGGREGATION_CONFIG.calculateTotalItems) return
         totalStat.totalItems = data.records.reduce((sum, record) =>
             sum + parseInt(record.quantity, 10), 0);
         logger.debug(`Total items [${totalStat.totalItems}]`);
     }
 
     private calculateTotalRevenue(data: ParseResult, totalStat: StatData): void {
+        if (AGGREGATION_CONFIG.calculateTotalRevenue) return
         totalStat.totalRevenue = data.records.reduce((sum, record) => {
             const price = parseFloat(record.price);
             const quantity = parseInt(record.quantity, 10);
@@ -43,6 +48,9 @@ export class Aggregator {
         data: ParseResult,
         dimension: 'category' | 'country'
     ): { stats: DimensionStats; count: number } {
+        if (AGGREGATION_CONFIG.calculateDimensionStats) {
+            return { stats: this.createEmptyDimensionStats(), count: 0 }
+        }
         const itemsMap = new Map<string, number>();
         const revenueMap = new Map<string, number>();
         const aggregatesMap = new Map<string, { sum: number, count: number }>();
@@ -87,6 +95,14 @@ export class Aggregator {
             countriesCount: 0,
             categoriesStats: { items: {}, revenue: {}, avgPrice: {} },
             countriesStats: { items: {}, revenue: {}, avgPrice: {} }
+        };
+    }
+
+    private createEmptyDimensionStats(): DimensionStats {
+        return {
+            items: {},
+            revenue: {},
+            avgPrice: {}
         };
     }
 

@@ -41,8 +41,7 @@ class Application {
             logger.error('Application failed', {
                 error: error.message,
                 stack: error,
-                timestamp: new Date().toISOString()
-            }, 'Application')
+            }, 'Application');
         }
     }
 }

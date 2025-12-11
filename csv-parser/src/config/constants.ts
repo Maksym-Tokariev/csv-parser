@@ -4,9 +4,9 @@ export const PROJECT_ROOT = path.resolve(__dirname, '../..');
 export const DATA_DIR = path.join(PROJECT_ROOT, 'data');
 export const RESULTS_DIR = path.join(PROJECT_ROOT, 'results')
 
-export const INPUT_FILE_PATH = path.join(DATA_DIR, 'data.csv');
-export const RESULT_FILE_PATH = path.join(RESULTS_DIR, 'report.json');
+export const INPUT_FILE_PATH = path.join(DATA_DIR, 'exampleData.csv');
 export const RESULT_FILE_NAME = 'report.json';
+export const RESULT_FILE_PATH = path.join(RESULTS_DIR, RESULT_FILE_NAME);
 
 export const ARR_OF_COLUMNS: readonly string[] = [
     'id', 'category', 'country', 'price', 'quantity', 'sold_at'

@@ -29,17 +29,13 @@ export class CSVProcessor {
             logger.info('Start of parsing', this.filePath, this.context);
 
             const header: string[] = await this.readHeader(rl);
-
-            if (!this.validator.isHeaderCorrect(header)) {
-                throw new Error('Invalid header');
-            }
+            this.validator.checkHeaderCorrect(header);
 
             return await this.processDataLines(rl);
         } catch (error: any) {
             logger.error('CSV parsing failed' , {
                 filePath: this.filePath,
                 error: error.message,
-                stack: error.stack
             });
             throw error;
         } finally {

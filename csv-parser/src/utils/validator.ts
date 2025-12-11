@@ -6,7 +6,7 @@ import {
 import {ValidationError} from "../types/types";
 import {ErrorReporter} from "./errorReporter";
 import {logger} from "./logger";
-import {VALIDATOR_CONFIG} from "../config/validatorConfig";
+import {VALIDATOR_CONFIG} from "../config/validation";
 
 export class Validator {
 
@@ -17,7 +17,7 @@ export class Validator {
         this.context = context;
     }
 
-    public isHeaderCorrect(header: string[]): boolean {
+    public checkHeaderCorrect(header: string[]): void {
         const isHeaderValid = ARR_OF_COLUMNS.every((col: string) => {
             return header.includes(col);
         });
@@ -28,10 +28,9 @@ export class Validator {
                 expected: ARR_OF_COLUMNS,
                 actual: header
             } , this.context);
-            return false;
+            throw new Error('Invalid header');
         }
         logger.debug('Header is valid', header, this.context);
-        return true;
     }
 
     public validateLine(values: string[], lineNumber: number): boolean {
