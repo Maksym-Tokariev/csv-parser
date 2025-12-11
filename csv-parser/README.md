@@ -17,7 +17,7 @@ A professional tool for processing, validating, and analyzing CSV files with rep
 ### Installation
 
 ```bash
-git clone https://github.com/your-username/csv-processor.git
+git clone https://github.com/Maksym-Tokariev/csv-parser.git
 cd csv-processor
 npm install
 ```
