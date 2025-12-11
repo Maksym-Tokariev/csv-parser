@@ -35,7 +35,7 @@ export class Aggregator {
     }
 
     private calculateTotalRevenue(data: ParseResult, totalStat: StatData): void {
-        if (AGGREGATION_CONFIG.calculateTotalRevenue) return
+        if (!AGGREGATION_CONFIG.calculateTotalRevenue) return
         totalStat.totalRevenue = data.records.reduce((sum, record) => {
             const price = parseFloat(record.price);
             const quantity = parseInt(record.quantity, 10);
@@ -48,7 +48,7 @@ export class Aggregator {
         data: ParseResult,
         dimension: 'category' | 'country'
     ): { stats: DimensionStats; count: number } {
-        if (AGGREGATION_CONFIG.calculateDimensionStats) {
+        if (!AGGREGATION_CONFIG.calculateDimensionStats) {
             return { stats: this.createEmptyDimensionStats(), count: 0 }
         }
         const itemsMap = new Map<string, number>();
