@@ -4,13 +4,13 @@ A professional tool for processing, validating, and analyzing CSV files with rep
 
 ## Features
 
-- 📁 Parsing CSV files of any size
-- ✅ Data validation using multiple rules
-- 📈 Aggregation and statistical analysis
-- 📊 JSON report generation
-- 🎯 Configurable validation logic
-- 📝 Detailed process logging
-- 🚀 High performance
+- Parsing CSV files of any size
+- Data validation using multiple rules
+- Aggregation and statistical analysis
+- JSON report generation
+- Configurable validation logic
+- Detailed process logging
+- High performance
 
 ## Quick Start
 
