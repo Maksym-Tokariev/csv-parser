@@ -1,5 +1,5 @@
 import {
-    ARR_OF_COLUMNS, DATE_FORMAT, ID_PREFIX,
+    ARR_OF_COLUMNS,
     MAX_LINE_SIZE,
     NUMBER_OF_COLUMNS
 } from "../config/constants";
@@ -7,6 +7,7 @@ import {ValidationError} from "../types/types";
 import {ErrorReporter} from "./errorReporter";
 import {logger} from "./logger";
 import {VALIDATOR_CONFIG} from "../config/validation";
+import {config} from "./configurator";
 
 export class Validator {
 
@@ -108,7 +109,7 @@ export class Validator {
     }
 
     private validateLineLength(errors: ValidationError[], value: string, lineNumber: number, fieldName: string): void {
-        if (value.length > MAX_LINE_SIZE) {
+        if (value.length > <number>config.get('parsing', 'maxLineSize')) {
             const message: string = `Value too long in column [${fieldName}].`
                 + ` Max length: ${MAX_LINE_SIZE}`;
             this.reporter.pushError(errors, lineNumber, message, value, fieldName);
@@ -119,7 +120,7 @@ export class Validator {
         let numericPart: string = value;
         let hasPrefix = false;
 
-        if (numericPart.startsWith(ID_PREFIX)) {
+        if (numericPart.startsWith(<string>config.get('parsing', 'idPrefix'))) {
             hasPrefix = true;
             numericPart = value.slice(1);
 
@@ -133,7 +134,7 @@ export class Validator {
         }
         if (!/^\d+$/.test(numericPart)) {
             const message = hasPrefix?
-                `Id with ${ID_PREFIX} prefix must contain only number after prefix. Invalid character: ${this.findInvalidChar(numericPart)}`
+                `Id with ${config.get("parsing", "idPrefix")} prefix must contain only number after prefix. Invalid character: ${this.findInvalidChar(numericPart)}`
                 : `Id must contain only numbers. Invalid character: ${this.findInvalidChar(numericPart)}`;
             logger.warn(`Invalid character in id [${value}]`, null, 'Validator.validateId');
             this.reporter.pushError(errors, lineNumber, message, value, fieldName);
@@ -204,7 +205,7 @@ export class Validator {
         const isoRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
 
         if (!isoRegex.test(value)) {
-            const message = `${fieldName} must be in exact format: ${DATE_FORMAT}`;
+            const message = `${fieldName} must be in exact format: ${config.get('parsing', 'dateFormat')}`;
             this.reporter.pushError(errors, lineNumber, message, value, fieldName);
             return;
         }

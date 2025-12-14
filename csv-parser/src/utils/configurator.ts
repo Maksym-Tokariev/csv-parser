@@ -1,5 +1,6 @@
 import {AppConfig} from "../types/configTypes";
 import {DEFAULT_CONFIG} from "../config/defaultConfigs";
+import {logger} from "./logger";
 
 export class Configurator {
     private static instance: Configurator;
@@ -18,8 +19,10 @@ export class Configurator {
         }
         return Configurator.instance;
     }
+
     public set<K extends keyof AppConfig>(section: K, value: Partial<AppConfig[K]>): void {
         Object.assign(this.config[section], value);
+        logger.debug(`The new value set`, {section: this.config[section], value: value}, this.context)
     }
 
     public get<K extends keyof AppConfig>(section: K, prop: keyof AppConfig[K]): AppConfig[K][keyof AppConfig[K]] {
