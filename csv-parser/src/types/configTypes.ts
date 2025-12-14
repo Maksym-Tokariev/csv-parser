@@ -7,6 +7,7 @@ export interface PathsConfig {
     resultsDir: string;
     inputFilePath: string;
     resultFilePath: string;
+    resultFileName: string;
 }
 
 export interface ParserConfig {
@@ -27,6 +28,12 @@ export interface ValidationConfig {
     validateEmptyLines: boolean;
     maxQuantity: number;
     maxPrice: number;
+    specialCharsRegEx: RegExp;
+    separator: Separator;
+    digitsRegExp: RegExp;
+    isoRegExp: RegExp;
+    positiveIntegerRegex: RegExp;
+    floatNumberRegEx: RegExp;
 }
 
 export interface AggregationConfig {

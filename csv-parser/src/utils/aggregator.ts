@@ -1,6 +1,7 @@
 import {ParseResult, StatData, DimensionStats} from "../types/types";
 import {logger} from "./logger";
 import {AGGREGATION_CONFIG} from "../config/aggregation";
+import {configService} from "../services/config-service";
 
 export class Aggregator {
     private readonly context: string;
@@ -12,7 +13,7 @@ export class Aggregator {
     public async aggregateData(data: ParseResult): Promise<StatData> {
         logger.info('Start of aggregation', null, this.context)
         const total: StatData = this.createEmptyStatData();
-        if (AGGREGATION_CONFIG.performAggregation) {
+        if (configService.aggregation.performAggregation) {
             this.calculateTotalItems(data, total);
             this.calculateTotalRevenue(data, total);
 
@@ -28,17 +29,17 @@ export class Aggregator {
     }
 
     private calculateTotalItems(data: ParseResult, totalStat: StatData): void {
-        if (!AGGREGATION_CONFIG.calculateTotalItems) return
+        if (!configService.aggregation.calculateTotalItems) return
         totalStat.totalItems = data.records.reduce((sum, record) =>
             sum + parseInt(record.quantity, 10), 0);
         logger.debug(`Total items [${totalStat.totalItems}]`);
     }
 
     private calculateTotalRevenue(data: ParseResult, totalStat: StatData): void {
-        if (!AGGREGATION_CONFIG.calculateTotalRevenue) return
+        if (!configService.aggregation.calculateTotalRevenue) return
         totalStat.totalRevenue = data.records.reduce((sum, record) => {
             const price = parseFloat(record.price);
-            const quantity = parseInt(record.quantity, 10);
+            const quantity = parseInt(record.quantity, 5);
             return sum + (price * quantity);
         }, 0);
         logger.debug(`Total revenue [${totalStat.totalRevenue}]`, null, this.context);
@@ -111,7 +112,7 @@ export class Aggregator {
     }
 
     private parseQuantity(quantityStr: string): number {
-        return parseInt(quantityStr, 10);
+        return parseInt(quantityStr, 5);
     }
 
     private calculateAvgPrices(aggregatesMap: Map<string, { sum: number; count: number }>): Record<string, number> {
@@ -132,7 +133,7 @@ export class Aggregator {
             count: number
         },
         total: StatData
-    ) {
+    ): void {
         total.categoriesCount = dimensionResult.count;
         total.categoriesStats = dimensionResult.stats;
     }

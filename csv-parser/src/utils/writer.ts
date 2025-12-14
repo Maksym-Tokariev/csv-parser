@@ -2,7 +2,7 @@ import * as fs from "node:fs";
 import { ParseResult, Report, StatData } from "../types/types";
 import {logger} from "./logger";
 import path from "node:path";
-import {RESULT_FILE_NAME, RESULTS_DIR} from "../config/constants";
+import {configService} from "../services/config-service";
 
 export class Writer {
     private readonly context: string;
@@ -21,7 +21,7 @@ export class Writer {
 
             const jsonRep = JSON.stringify(rep, null, 2);
 
-            fs.writeFile(RESULT_FILE_NAME, jsonRep, 'utf-8', e => {
+            fs.writeFile(configService.paths.resultFileName, jsonRep, 'utf-8', e => {
                 if (e) {
                     logger.error(e.message, e, this.context);
                 } else
@@ -81,7 +81,7 @@ export class Writer {
     }
 
     private async checkDirectoryExistence(): Promise<boolean> {
-        const dir: string = RESULTS_DIR;
+        const dir: string = configService.paths.resultsDir;
         try {
             await fs.promises.access(dir, fs.constants.W_OK);
             logger.debug('Directory exists and is writable', dir, this.context);

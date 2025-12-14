@@ -36,7 +36,7 @@ export class Configurator {
     public getSection<K extends keyof AppConfig>(section: K): AppConfig[K] {
         return this.config[section]
     }
-
+    
     public update(config: Partial<AppConfig>): void {
         this.config = { ...this.config, ...config };
     }

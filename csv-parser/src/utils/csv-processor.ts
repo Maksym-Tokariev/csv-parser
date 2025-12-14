@@ -5,19 +5,16 @@ import {
     CSVRecord,
     ParseResult
 } from '../types/types';
-
-import {
-    INPUT_FILE_PATH
-} from '../config/constants';
 import { Validator } from "./validator";
 import {logger} from "./logger";
+import {configService} from "../services/config-service";
 
 export class CSVProcessor {
     private readonly filePath: string;
     private readonly validator: Validator;
     private readonly context: string;
 
-    constructor(filePath: string = INPUT_FILE_PATH, context: string = 'CSVProcessor') {
+    constructor(filePath: string = configService.paths.inputFilePath, context: string = 'CSVProcessor') {
         this.filePath = filePath;
         this.validator = new Validator();
         this.context = context;

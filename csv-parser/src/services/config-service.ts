@@ -30,7 +30,7 @@ export class ConfigService {
     }
 
     get paths(): AppConfig['paths'] {
-        return this.paths
+        return this._paths
     }
 
     get parsing(): AppConfig['parsing'] {

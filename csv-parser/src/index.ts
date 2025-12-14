@@ -5,7 +5,6 @@ import {
     ParseResult,
     StatData
 } from "./types/types";
-import {INPUT_FILE_PATH, RESULT_FILE_NAME, RESULT_FILE_PATH} from "./config/constants";
 import {logger} from "./utils/logger";
 import {config} from "./utils/configurator";
 import {configService} from "./services/config-service";
@@ -27,8 +26,8 @@ class Application {
 
     async run(): Promise<void> {
         logger.info('Starting CSV processing application', {
-            inputFile: INPUT_FILE_PATH,
-            outputFile: RESULT_FILE_PATH
+            inputFile: configService.paths.inputFilePath,
+            outputFile: configService.paths.resultFilePath
         }, 'Application');
 
         try {
@@ -38,7 +37,7 @@ class Application {
 
             const parseResult: ParseResult = await this.processor.parseCSV();
             const stats: StatData = await this.aggregator.aggregateData(parseResult);
-            await this.writer.createJson(parseResult, stats, RESULT_FILE_NAME);
+            await this.writer.createJson(parseResult, stats, configService.paths.resultFileName);
 
             const duration = Date.now() - startTime;
             logger.info(`Processing completed in ${duration}ms`, null, this.context);

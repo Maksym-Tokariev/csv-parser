@@ -1,32 +1,27 @@
-import {
-    ARR_OF_COLUMNS,
-    MAX_LINE_SIZE,
-    NUMBER_OF_COLUMNS
-} from "../config/constants";
 import {ValidationError} from "../types/types";
 import {ErrorReporter} from "./errorReporter";
 import {logger} from "./logger";
-import {VALIDATOR_CONFIG} from "../config/validation";
-import {config} from "./configurator";
+import {configService} from "../services/config-service";
 
 export class Validator {
-
-    private readonly reporter: ErrorReporter = new ErrorReporter();
+    private readonly reporter: ErrorReporter;
     private readonly context: string;
+    private readonly columns: readonly string[] = configService.parsing.columns;
 
     constructor(context: string = 'Validator') {
         this.context = context;
+        this.reporter = new ErrorReporter();
     }
 
     public checkHeaderCorrect(header: string[]): void {
-        const isHeaderValid = ARR_OF_COLUMNS.every((col: string) => {
+        const isHeaderValid = this.columns.every((col: string) => {
             return header.includes(col);
         });
         if (!isHeaderValid) {
-            const missing: string[] = ARR_OF_COLUMNS.filter(col => !header.includes(col));
+            const missing: string[] = this.columns.filter(col => !header.includes(col));
             logger.error('Some required fields are missing:', {
                 missing: missing.join(', '),
-                expected: ARR_OF_COLUMNS,
+                expected: this.columns,
                 actual: header
             } , this.context);
             throw new Error('Invalid header');
@@ -40,9 +35,9 @@ export class Validator {
         this.validateNumberOfColumns(errors, values, lineNumber);
 
         values.forEach((value, index) => {
-            const fieldName = ARR_OF_COLUMNS[index];
+            const fieldName = this.columns[index];
 
-            if (VALIDATOR_CONFIG.validateEmptyLines) {
+            if (configService.validation.validateEmptyLines) {
                 this.validateEmptyLine(errors, value, lineNumber, fieldName)
             }
             this.validateLineLength(errors, value, lineNumber, fieldName);
@@ -58,27 +53,27 @@ export class Validator {
     private validateValue(error: ValidationError[], value: string, lineNumber: number, fieldName: string): void {
         switch (fieldName) {
             case 'id':
-                if (VALIDATOR_CONFIG.validateId) {
+                if (configService.validation.validateId) {
                     this.validateId(error, lineNumber, value);
                 }
                 break;
             case 'price':
-                if (VALIDATOR_CONFIG.validatePrice) {
+                if (configService.validation.validatePrice) {
                     this.validatePrice(error, lineNumber, value);
                 }
                 break;
             case 'quantity':
-                if (VALIDATOR_CONFIG.validateQuantity) {
+                if (configService.validation.validateQuantity) {
                     this.validateQuantity(error, lineNumber, value);
                 }
                 break;
             case 'sold_at':
-                if (VALIDATOR_CONFIG.validateSoldAt) {
+                if (configService.validation.validateSoldAt) {
                     this.validateSoldAt(error, lineNumber, value);
                 }
                 break;
             default:
-                if (VALIDATOR_CONFIG.validateStringValues) {
+                if (configService.validation.validateStringValues) {
                     this.validateStringValue(error, lineNumber, value, fieldName);
                 }
                 break;
@@ -86,16 +81,16 @@ export class Validator {
     }
 
     private hasInvalidSpecialChars(value: string): boolean {
-        return /[@#$%^*()_+=\[\]{}|;:"<>?~]/.test(value);
+        return configService.validation.specialCharsRegEx.test(value);
     }
 
     private hasDigit(value: string): boolean {
-        return /\d/.test(value);
+        return configService.validation.digitsRegExp.test(value);
     }
 
     private validateNumberOfColumns(errors: ValidationError[], values: string[], lineNumber: number): void {
-        if (values.length !== NUMBER_OF_COLUMNS) {
-            const message: string = `Invalid number of fields. Expected ${NUMBER_OF_COLUMNS},` +
+        if (values.length !== configService.parsing.numberOfColumns) {
+            const message: string = `Invalid number of fields. Expected ${configService.parsing.numberOfColumns},` +
                 ` got ${values.length}`;
             this.reporter.pushError(errors, lineNumber, message, values.join(','));
         }
@@ -109,9 +104,9 @@ export class Validator {
     }
 
     private validateLineLength(errors: ValidationError[], value: string, lineNumber: number, fieldName: string): void {
-        if (value.length > <number>config.get('parsing', 'maxLineSize')) {
+        if (value.length > configService.parsing.maxLineSize) {
             const message: string = `Value too long in column [${fieldName}].`
-                + ` Max length: ${MAX_LINE_SIZE}`;
+                + ` Max length: ${configService.parsing.maxLineSize}`;
             this.reporter.pushError(errors, lineNumber, message, value, fieldName);
         }
     }
@@ -120,7 +115,7 @@ export class Validator {
         let numericPart: string = value;
         let hasPrefix = false;
 
-        if (numericPart.startsWith(<string>config.get('parsing', 'idPrefix'))) {
+        if (numericPart.startsWith(configService.parsing.idPrefix)) {
             hasPrefix = true;
             numericPart = value.slice(1);
 
@@ -134,7 +129,7 @@ export class Validator {
         }
         if (!/^\d+$/.test(numericPart)) {
             const message = hasPrefix?
-                `Id with ${config.get("parsing", "idPrefix")} prefix must contain only number after prefix. Invalid character: ${this.findInvalidChar(numericPart)}`
+                `Id with ${configService.parsing.idPrefix} prefix must contain only number after prefix. Invalid character: ${this.findInvalidChar(numericPart)}`
                 : `Id must contain only numbers. Invalid character: ${this.findInvalidChar(numericPart)}`;
             logger.warn(`Invalid character in id [${value}]`, null, 'Validator.validateId');
             this.reporter.pushError(errors, lineNumber, message, value, fieldName);
@@ -151,7 +146,7 @@ export class Validator {
     }
 
     private validatePrice(errors: ValidationError[], lineNumber: number, value: string, fieldName: string = 'price'): void {
-        if (!/^\d+(\.\d+)?$/.test(value)) {
+        if (!configService.validation.floatNumberRegEx.test(value)) {
             const message = 'Price must be a valid decimal number (e.g., 10.99)';
             this.reporter.pushError(errors, lineNumber, message, value, fieldName);
             return;
@@ -164,8 +159,8 @@ export class Validator {
             return
         }
 
-        if (VALIDATOR_CONFIG.maxPrice && (price >= VALIDATOR_CONFIG.maxPrice)) {
-            const message = `The price value must be less then ${VALIDATOR_CONFIG.maxPrice}`;
+        if (configService.validation.maxPrice && (price >= configService.validation.maxPrice)) {
+            const message = `The price value must be less then ${configService.validation.maxPrice}`;
             this.reporter.pushError(errors, lineNumber, message, value, fieldName);
             return;
         }
@@ -179,15 +174,15 @@ export class Validator {
     }
 
     private validateQuantity(errors: ValidationError[], lineNumber: number, value: string, fieldName: string = 'quantity'): void {
-        const quantityMatch = value.match(/^(0|[1-9]\d*)$/);
+        const quantityMatch = value.match(configService.validation.positiveIntegerRegex);
         if (!quantityMatch) {
             const message = 'Quantity must be a positive integer';
             this.reporter.pushError(errors, lineNumber, message, value, fieldName);
             return;
         }
-        const quantity: number = parseInt(value, 10);
-        if (VALIDATOR_CONFIG.maxQuantity && (quantity > VALIDATOR_CONFIG.maxQuantity)) {
-            const message = `The quantity value must be less then ${VALIDATOR_CONFIG.maxQuantity}`;
+        const quantity: number = parseInt(value, 5);
+        if (configService.validation.maxQuantity && (quantity > configService.validation.maxQuantity)) {
+            const message = `The quantity value must be less then ${configService.validation.maxQuantity}`;
             this.reporter.pushError(errors, lineNumber, message, value, fieldName);
             return;
         }
@@ -202,10 +197,10 @@ export class Validator {
     }
 
     private validateSoldAt(errors: ValidationError[], lineNumber: number, value: string, fieldName: string = 'sold_at'): void {
-        const isoRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
+        const isoRegex = configService.validation.isoRegExp;
 
         if (!isoRegex.test(value)) {
-            const message = `${fieldName} must be in exact format: ${config.get('parsing', 'dateFormat')}`;
+            const message = `${fieldName} must be in exact format: ${configService.parsing.dateFormat}`;
             this.reporter.pushError(errors, lineNumber, message, value, fieldName);
             return;
         }
@@ -234,7 +229,7 @@ export class Validator {
     }
 
     private findInvalidChar(str: string): string {
-        const invalidChar = str.split('').filter(char => !/\d/.test(char));
+        const invalidChar = str.split('').filter(char => !configService.validation.digitsRegExp.test(char));
         return invalidChar.join(', ');
     }
 
