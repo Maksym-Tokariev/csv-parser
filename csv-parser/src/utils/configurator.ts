@@ -1,6 +1,5 @@
 import {AppConfig} from "../types/configTypes";
 import {DEFAULT_CONFIG} from "../config/defaultConfigs";
-import {logger} from "./logger";
 
 export class Configurator {
     private static instance: Configurator;
