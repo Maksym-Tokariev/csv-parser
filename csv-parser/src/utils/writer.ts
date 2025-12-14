@@ -2,7 +2,7 @@ import * as fs from "node:fs";
 import { ParseResult, Report, StatData } from "../types/types";
 import {logger} from "./logger";
 import path from "node:path";
-import {RESULT_FILE_PATH, RESULTS_DIR} from "../config/constants";
+import {RESULT_FILE_NAME, RESULTS_DIR} from "../config/constants";
 
 export class Writer {
     private readonly context: string;
@@ -21,7 +21,7 @@ export class Writer {
 
             const jsonRep = JSON.stringify(rep, null, 2);
 
-            fs.writeFile(RESULT_FILE_PATH, jsonRep, 'utf-8', e => {
+            fs.writeFile(RESULT_FILE_NAME, jsonRep, 'utf-8', e => {
                 if (e) {
                     logger.error(e.message, e, this.context);
                 } else

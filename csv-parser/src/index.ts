@@ -7,6 +7,7 @@ import {
 } from "./types/types";
 import {INPUT_FILE_PATH, RESULT_FILE_NAME, RESULT_FILE_PATH} from "./config/constants";
 import {logger} from "./utils/logger";
+import {config} from "./utils/configurator";
 
 class Application {
     private readonly processor: CSVProcessor;
@@ -20,6 +21,7 @@ class Application {
         this.aggregator = new Aggregator();
         this.writer = new Writer();
         this.context = context;
+
     }
 
     async run(): Promise<void> {
@@ -31,6 +33,10 @@ class Application {
         try {
             const startTime = Date.now();
 
+            logger.debug('Section logging:\n', config.getAll(), this.context);
+            config.set("logging", {
+                level: "debug"
+            });
             const parseResult: ParseResult = await this.processor.parseCSV();
             const stats: StatData = await this.aggregator.aggregateData(parseResult);
             await this.writer.createJson(parseResult, stats, RESULT_FILE_NAME);
