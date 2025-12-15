@@ -1,7 +1,7 @@
-import {ParseResult, StatData, DimensionStats} from "../types/types";
+import {ParseResult} from "../types/parsingTypes";
 import {logger} from "./logger";
-import {AGGREGATION_CONFIG} from "../config/aggregation";
 import {configService} from "../services/config-service";
+import {DimensionStats, StatData} from "../types/statTypes";
 
 export class Aggregator {
     private readonly context: string;
@@ -49,7 +49,7 @@ export class Aggregator {
         data: ParseResult,
         dimension: 'category' | 'country'
     ): { stats: DimensionStats; count: number } {
-        if (!AGGREGATION_CONFIG.calculateDimensionStats) {
+        if (!configService.aggregation.calculateDimensionStats) {
             return { stats: this.createEmptyDimensionStats(), count: 0 }
         }
         const itemsMap = new Map<string, number>();

@@ -1,5 +1,5 @@
-import {ValidationError} from "../types/types";
 import {logger} from "./logger";
+import {ValidationError} from "../types/validationTypes";
 
 export class ErrorReporter {
     private readonly context: string;

@@ -1,20 +1,17 @@
 import { CSVProcessor } from './utils/csv-processor';
 import { Aggregator } from "./utils/aggregator";
 import { Writer } from "./utils/writer";
-import {
-    ParseResult,
-    StatData
-} from "./types/types";
+import { ParseResult } from "./types/parsingTypes";
 import {logger} from "./utils/logger";
 import {config} from "./utils/configurator";
 import {configService} from "./services/config-service";
+import {StatData} from "./types/statTypes";
 
 class Application {
     private readonly processor: CSVProcessor;
     private readonly aggregator: Aggregator;
     private readonly writer: Writer;
     private readonly context: string;
-
 
     constructor(context: string = 'Application') {
         this.processor = new CSVProcessor();

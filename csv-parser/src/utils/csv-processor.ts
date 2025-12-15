@@ -4,7 +4,7 @@ import readline from 'readline';
 import {
     CSVRecord,
     ParseResult
-} from '../types/types';
+} from '../types/parsingTypes';
 import { Validator } from "./validator";
 import {logger} from "./logger";
 import {configService} from "../services/config-service";

@@ -1,5 +1,6 @@
 import * as fs from "node:fs";
-import { ParseResult, Report, StatData } from "../types/types";
+import { ParseResult, Report } from "../types/parsingTypes";
+import {StatData} from "../types/statTypes";
 import {logger} from "./logger";
 import path from "node:path";
 import {configService} from "../services/config-service";

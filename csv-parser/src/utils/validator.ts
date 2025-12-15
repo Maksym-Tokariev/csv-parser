@@ -1,5 +1,5 @@
-import {ValidationError} from "../types/types";
 import {ErrorReporter} from "./errorReporter";
+import {ValidationError} from "../types/validationTypes";
 import {logger} from "./logger";
 import {configService} from "../services/config-service";
 

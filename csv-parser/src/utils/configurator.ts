@@ -4,7 +4,7 @@ import {logger} from "./logger";
 
 export class Configurator {
     private static instance: Configurator;
-    private isFrozen = false;
+    private isLocked: boolean = false;
     private config: AppConfig;
     private readonly context: string;
 
@@ -21,6 +21,10 @@ export class Configurator {
     }
 
     public set<K extends keyof AppConfig>(section: K, value: Partial<AppConfig[K]>): void {
+        if (this.isLocked) {
+            logger.error('Config is frozen. Configuration cannot be changed', null, this.context);
+            return;
+        }
         Object.assign(this.config[section], value);
         logger.debug(`The new value set`, {section: this.config[section], value: value}, this.context)
     }
@@ -36,10 +40,21 @@ export class Configurator {
     public getSection<K extends keyof AppConfig>(section: K): AppConfig[K] {
         return this.config[section]
     }
-    
+
     public update(config: Partial<AppConfig>): void {
         this.config = { ...this.config, ...config };
     }
+
+    public lock(): void {
+        logger.warn('Configuration is locked', this.config, this.context);
+        this.isLocked = true;
+    }
+
+    public unlock(): void {
+        logger.warn('Configuration is unlocked', this.config, this.context);
+        this.isLocked = false;
+    }
+
 }
 
 export const config: Configurator = Configurator.getInstance();
