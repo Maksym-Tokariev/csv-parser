@@ -1,5 +1,5 @@
 import {LOG_LEVEL, LOG_LEVELS, LogLevel} from "../config/logging";
-import {configService} from "../services/config-service";
+import {configService} from "./config-service";
 
 export class Logger {
     private static instance: Logger;

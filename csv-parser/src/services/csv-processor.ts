@@ -6,8 +6,8 @@ import {
 } from '../types/parsingTypes';
 import { Validator } from "./validator";
 import {logger} from "./logger";
-import {configService} from "../services/config-service";
-import {contextService} from "../services/context-service";
+import {configService} from "./config-service";
+import {getContext} from "../utils/context";
 
 export class CSVProcessor {
     private readonly filePath: string;
@@ -21,7 +21,7 @@ export class CSVProcessor {
     public async parseCSV(): Promise<ParseResult> {
         const rl = await this.initializeFileReader();
         try {
-            logger.info('Start of parsing', this.filePath, contextService.processor);
+            logger.info('Start of parsing', this.filePath, getContext(this));
 
             const header: string[] = await this.readHeader(rl);
             this.validator.checkHeaderCorrect(header);
@@ -38,20 +38,20 @@ export class CSVProcessor {
                 rl.close();
                 logger.debug('Readline interface closed');
             }
-            logger.debug('Stream closed', null, contextService.processor);
+            logger.debug('Stream closed', null, getContext(this));
         }
     }
 
     private async initializeFileReader(): Promise<readline.Interface> {
         if (!this.isFileFound()) {
             const error = new Error('File not found')
-            logger.error(error.message, this.filePath, contextService.processor);
+            logger.error(error.message, this.filePath, getContext(this));
             throw error;
         }
         const fileStream = fs.createReadStream(this.filePath, {
             encoding: 'utf-8'
         });
-        logger.info('Reader was initialized', null, contextService.processor);
+        logger.info('Reader was initialized', null, getContext(this));
         return readline.createInterface({
             input: fileStream,
             crlfDelay: Infinity
@@ -68,7 +68,7 @@ export class CSVProcessor {
 
         if (headerResult.done) {
             const error = new Error('CSV file is empty');
-            logger.error('CSV file is empty', error, contextService.processor);
+            logger.error('CSV file is empty', error, getContext(this));
             throw error;
         }
         return headerResult.value.split(',');
@@ -78,17 +78,17 @@ export class CSVProcessor {
         const result: ParseResult = this.createEmptyResult();
         let lineNumber: number = 1;
 
-        logger.info('Process line', null, contextService.processor)
+        logger.info('Process line', null, getContext(this))
         for await (const line of rl) {
             lineNumber++;
             result.totalLines++;
 
             if (line.trim().length === 0) {
-                logger.debug('Skipping empty line', lineNumber, contextService.processor);
+                logger.debug('Skipping empty line', lineNumber, getContext(this));
                 continue;
             }
 
-            logger.debug('Process line:\n', line, contextService.processor);
+            logger.debug('Process line:\n', line, getContext(this));
             try {
                 await this.processLine(line, lineNumber, result);
             } catch (error: any) {
@@ -99,7 +99,7 @@ export class CSVProcessor {
                 });
             }
         }
-        logger.info('Validation completed', null, contextService.processor)
+        logger.info('Validation completed', null, getContext(this))
         return result;
     }
 
@@ -109,11 +109,11 @@ export class CSVProcessor {
 
         if (hasValidationErrors) {
             result.invalidLines++;
-            logger.warn('Invalid line values: ', line, contextService.processor)
+            logger.warn('Invalid line values: ', line, getContext(this))
             return
         }
         const record = this.createRecord(values);
-        logger.debug('Record added\n', record, contextService.processor);
+        logger.debug('Record added\n', record, getContext(this));
 
         result.records.push(record);
         result.validLines++;

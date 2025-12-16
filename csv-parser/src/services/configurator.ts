@@ -1,7 +1,7 @@
 import {AppConfig} from "../types/configTypes";
 import {DEFAULT_CONFIG} from "../config/defaultConfigs";
 import {logger} from "./logger";
-import {contextService} from "../services/context-service";
+import {getContext} from "../utils/context";
 
 export class Configurator {
     private static instance: Configurator;
@@ -21,14 +21,14 @@ export class Configurator {
 
     public set<K extends keyof AppConfig>(section: K, value: Partial<AppConfig[K]>): void {
         if (this.isLocked) {
-            logger.error('Config is frozen. Configuration cannot be changed', null, contextService.configurator);
+            logger.error('Config is frozen. Configuration cannot be changed', null, getContext(this));
             return;
         }
         Object.assign(this.config[section], value);
         logger.debug(`The new value set`, {
             section: this.config[section],
             value: value},
-            contextService.configurator
+            getContext(this)
         )
     }
 
@@ -49,12 +49,12 @@ export class Configurator {
     }
 
     public lock(): void {
-        logger.warn('Configuration is locked', this.config, contextService.configurator);
+        logger.warn('Configuration is locked', this.config, getContext(this));
         this.isLocked = true;
     }
 
     public unlock(): void {
-        logger.warn('Configuration is unlocked', this.config, contextService.configurator);
+        logger.warn('Configuration is unlocked', this.config, getContext(this));
         this.isLocked = false;
     }
 

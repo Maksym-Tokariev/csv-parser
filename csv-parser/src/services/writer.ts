@@ -3,12 +3,12 @@ import { ParseResult, Report } from "../types/parsingTypes";
 import {StatData} from "../types/statTypes";
 import {logger} from "./logger";
 import path from "node:path";
-import {configService} from "../services/config-service";
-import {contextService} from "../services/context-service";
+import {configService} from "./config-service";
+import {getContext} from "../utils/context";
 
 export class Writer {
     public async createJson(total: ParseResult, stat: StatData, fileName: string): Promise<void> {
-        logger.info('Creating report file...', null, contextService.writer);
+        logger.info('Creating report file...', null, getContext(this));
         try {
             await this.checkDirectoryExistence();
             const rep: Report = this.createEmptyReport();
@@ -19,21 +19,21 @@ export class Writer {
 
             fs.writeFile(configService.paths.resultFileName, jsonRep, 'utf-8', e => {
                 if (e) {
-                    logger.error(e.message, e, contextService.writer);
+                    logger.error(e.message, e, getContext(this));
                 } else
-                    logger.info('File has been created: ', fileName, contextService.writer);
+                    logger.info('File has been created: ', fileName, getContext(this));
             });
             logger.info('Report file created successfully', {
                 fileName,
                 fileSize: `${(jsonRep.length / 1024).toFixed(2)} KB`,
                 path: path.resolve(fileName)
-            }, contextService.writer);
+            }, getContext(this));
         } catch (error: any) {
             logger.error('Failed to create report file', {
                 fileName,
                 error: error.message,
                 stack: error.stack
-            }, contextService.writer);
+            }, getContext(this));
             throw new Error(`Failed to write report: ${error.message}`)
         }
     }
@@ -80,10 +80,10 @@ export class Writer {
         const dir: string = configService.paths.resultsDir;
         try {
             await fs.promises.access(dir, fs.constants.W_OK);
-            logger.debug('Directory exists and is writable', dir, contextService.writer);
+            logger.debug('Directory exists and is writable', dir, getContext(this));
             return true;
         } catch (error) {
-            logger.error('Directory not found', dir , contextService.writer);
+            logger.error('Directory not found', dir , getContext(this));
             throw new Error;
         }
     }

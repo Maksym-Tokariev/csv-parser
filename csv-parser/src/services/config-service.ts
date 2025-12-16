@@ -1,5 +1,5 @@
 import {AppConfig} from "../types/configTypes";
-import {config} from "../utils/configurator";
+import {config} from "./configurator";
 
 class ConfigService {
     private static instance: ConfigService;

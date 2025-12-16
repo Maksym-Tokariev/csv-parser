@@ -1,13 +1,13 @@
 import {ParseResult} from "../types/parsingTypes";
 import {logger} from "./logger";
-import {configService} from "../services/config-service";
+import {configService} from "./config-service";
 import {DimensionStats, StatData} from "../types/statTypes";
-import {contextService} from "../services/context-service";
+import {getContext} from "../utils/context";
 
 export class Aggregator {
 
     public async aggregateData(data: ParseResult): Promise<StatData> {
-        logger.info('Start of aggregation', null, contextService.aggregator)
+        logger.info('Start of aggregation', null, getContext(this))
         const total: StatData = this.createEmptyStatData();
         if (configService.aggregation.performAggregation) {
             this.calculateTotalItems(data, total);
@@ -19,7 +19,7 @@ export class Aggregator {
             this.setCategoryStats(categoryStat, total);
             this.setCountryStats(countryStat, total);
 
-            logger.info('Aggregation completed', null, contextService.aggregator);
+            logger.info('Aggregation completed', null, getContext(this));
         }
         return total;
     }
@@ -38,7 +38,7 @@ export class Aggregator {
             const quantity = parseInt(record.quantity, 5);
             return sum + (price * quantity);
         }, 0);
-        logger.debug(`Total revenue [${totalStat.totalRevenue}]`, null, contextService.aggregator);
+        logger.debug(`Total revenue [${totalStat.totalRevenue}]`, null, getContext(this));
     }
 
     private calculateDimensionStats(
