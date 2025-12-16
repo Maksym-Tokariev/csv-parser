@@ -48,12 +48,6 @@ export class Parser {
 async function main(): Promise<void> {
     const app = new Parser();
     await app.run(configService.paths.resultFilePath);
-    /**
-     * TODO
-     * Создать метод для определения пути начального/конечного файла
-     * задать начальный конфиг
-     * чтение конфига из .json
-     * */
 }
 main()
     .then(() => {
