@@ -1,12 +1,8 @@
 import {logger} from "./logger";
 import {ValidationError} from "../types/validationTypes";
+import {contextService} from "../services/context-service";
 
 export class ErrorReporter {
-    private readonly context: string;
-
-    constructor(context: string = 'ErrorReporter') {
-        this.context = context;
-    }
 
     public pushError(errors: ValidationError[], lineNumber: number, message: string, value: string = '', fieldName?: string,): void {
         const error: ValidationError = {
@@ -27,7 +23,7 @@ export class ErrorReporter {
 
         logger.warn(`Found validation error`,
             new Set(errors.map(e => e.lineNumber)).size,
-            this.context);
+            contextService.errorReporter);
 
         errors.forEach((error, index) => {
             const logData = {
@@ -37,7 +33,7 @@ export class ErrorReporter {
                 value: error.value?.substring(0, 100)
             };
 
-            logger.warn(error.message, logData, `${this.context}.Detail`);
+            logger.warn(error.message, logData, `${contextService.errorReporter}.Detail`);
         });
     }
 

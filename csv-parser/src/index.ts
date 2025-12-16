@@ -2,54 +2,58 @@ import { CSVProcessor } from './utils/csv-processor';
 import { Aggregator } from "./utils/aggregator";
 import { Writer } from "./utils/writer";
 import { ParseResult } from "./types/parsingTypes";
+import {StatData} from "./types/statTypes";
 import {logger} from "./utils/logger";
 import {config} from "./utils/configurator";
 import {configService} from "./services/config-service";
-import {StatData} from "./types/statTypes";
+import {contextService} from "./services/context-service";
 
-class Application {
+export class Parser {
     private readonly processor: CSVProcessor;
     private readonly aggregator: Aggregator;
     private readonly writer: Writer;
-    private readonly context: string;
 
-    constructor(context: string = 'Application') {
+    constructor() {
         this.processor = new CSVProcessor();
         this.aggregator = new Aggregator();
         this.writer = new Writer();
-        this.context = context;
-
     }
 
-    async run(): Promise<void> {
+    async run(filePath: string): Promise<void> {
         logger.info('Starting CSV processing application', {
             inputFile: configService.paths.inputFilePath,
             outputFile: configService.paths.resultFilePath
-        }, 'Application');
+        }, contextService.parser);
 
         try {
             const startTime = Date.now();
 
-            logger.debug('Section logging:\n', config.getAll(), this.context);
+            logger.debug('Section logging:\n', config.getAll(), contextService.parser);
 
             const parseResult: ParseResult = await this.processor.parseCSV();
             const stats: StatData = await this.aggregator.aggregateData(parseResult);
-            await this.writer.createJson(parseResult, stats, configService.paths.resultFileName);
+            await this.writer.createJson(parseResult, stats, filePath);
 
             const duration = Date.now() - startTime;
-            logger.info(`Processing completed in ${duration}ms`, null, this.context);
+            logger.info(`Processing completed in ${duration}ms`, null, contextService.parser);
         } catch (error: any) {
             logger.error('Application failed', {
                 error: error.message,
                 stack: error,
-            }, 'Application');
+            }, contextService.parser);
         }
     }
 }
 
 async function main(): Promise<void> {
-    const app = new Application();
-    await app.run();
+    const app = new Parser();
+    await app.run(configService.paths.resultFilePath);
+    /**
+     * TODO
+     * Создать метод для определения пути начального/конечного файла
+     * задать начальный конфиг
+     * чтение конфига из .json
+     * */
 }
 main()
     .then(() => {
@@ -60,4 +64,3 @@ main()
         process.exit(1);
     });
 
-export {Application}

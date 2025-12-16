@@ -1,7 +1,7 @@
 import {AppConfig} from "../types/configTypes";
 import {config} from "../utils/configurator";
 
-export class ConfigService {
+class ConfigService {
     private static instance: ConfigService;
 
     private _paths: AppConfig['paths'];

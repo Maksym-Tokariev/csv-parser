@@ -1,4 +1,6 @@
 import * as path from 'path';
+import {ContextTypes} from "../types/contextTypes";
+import {Parser} from "../index";
 
 export const RESULT_FILE_NAME = 'report.json';
 export const INPUT_FILE_NAME = 'exampleData.csv';
@@ -22,3 +24,13 @@ export const DIGIT_REGEX : RegExp = /\d/;
 export const MAX_LINE_SIZE = 30;
 export const DATE_FORMAT = 'YYYY-MM-DDTHH:MM:SSZ';
 export const ID_PREFIX = 'P';
+
+export const CONTEXTS: ContextTypes = {
+    parser: 'Parser',
+    processor: 'CSVProcessor',
+    validator: 'Validator',
+    configurator: 'Configurator',
+    errorReporter: 'Error',
+    writer: 'Writer',
+    aggregator: 'Aggregator'
+}
