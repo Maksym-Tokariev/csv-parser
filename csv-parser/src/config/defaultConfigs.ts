@@ -4,18 +4,15 @@ import {SEPARATORS} from "./validation";
 import {LOG_LEVEL} from "./logging";
 import {
     EXPECTED_COLUMNS,
-    DATA_DIR,
-    DATE_FORMAT, DIGIT_REGEX, FLOAT_NUMBER_REGEX,
-    ID_PREFIX,
-    INPUT_FILE_PATH, ISO_REGEX,
+    DATA_DIR, DATE_FORMAT, DIGIT_REGEX,
+    FLOAT_NUMBER_REGEX, ID_PREFIX, ISO_REGEX,
     MAX_LINE_SIZE, POSITIVE_INTEGER_REGEX,
-    PROJECT_ROOT, RESULT_FILE_NAME, RESULTS_DIR, SPECIAL_CHARS_REGEX, INPUT_FILE_NAME
+    RESULT_FILE_NAME, RESULTS_DIR,
+    SPECIAL_CHARS_REGEX, INPUT_FILE_NAME
 } from "./constants";
 
 export const DEFAULT_CONFIG: AppConfig = {
     paths: {
-        projectRoot: PROJECT_ROOT,
-        dataDir: DATA_DIR,
         resultsDir: RESULTS_DIR,
         inputFilePath: path.join(DATA_DIR, INPUT_FILE_NAME),
         resultFilePath: path.join(RESULTS_DIR, RESULT_FILE_NAME),
@@ -46,7 +43,7 @@ export const DEFAULT_CONFIG: AppConfig = {
         floatNumberRegEx: FLOAT_NUMBER_REGEX
     },
     aggregation: {
-        performAggregation: true,
+        aggregate: true,
         calculateTotalItems: true,
         calculateTotalRevenue: true,
         calculateDimensionStats: true,

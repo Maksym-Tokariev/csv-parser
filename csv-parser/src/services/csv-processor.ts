@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import readline from 'readline';
 import {
     CSVRecord,
-    ParseResult
+    ParseResult, ParserOptions
 } from '../types/parsingTypes';
 import { Validator } from "./validator";
 import {logger} from "./logger";
@@ -18,7 +18,7 @@ export class CSVProcessor {
         this.validator = new Validator();
     }
 
-    public async parseCSV(): Promise<ParseResult> {
+    public async parseCSV(source: string | File | Buffer, options: ParserOptions): Promise<ParseResult> {
         const rl = await this.initializeFileReader();
         try {
             logger.info('Start of parsing', this.filePath, getContext(this));
@@ -71,7 +71,7 @@ export class CSVProcessor {
             logger.error('CSV file is empty', error, getContext(this));
             throw error;
         }
-        return headerResult.value.split(',');
+        return headerResult.value.split(configService.validation.separator);
     }
 
     private async processDataLines(rl: readline.Interface): Promise<ParseResult> {

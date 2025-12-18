@@ -4,19 +4,11 @@ import {logger} from "./logger";
 import {getContext} from "../utils/context";
 
 export class Configurator {
-    private static instance: Configurator;
     private isLocked: boolean = false;
     private config: AppConfig;
 
-    private constructor() {
+    constructor() {
         this.config = DEFAULT_CONFIG;
-    }
-
-    public static getInstance(): Configurator {
-        if (!Configurator.instance) {
-            Configurator.instance = new Configurator()
-        }
-        return Configurator.instance;
     }
 
     public set<K extends keyof AppConfig>(section: K, value: Partial<AppConfig[K]>): void {
@@ -59,5 +51,3 @@ export class Configurator {
     }
 
 }
-
-export const config: Configurator = Configurator.getInstance();

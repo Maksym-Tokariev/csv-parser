@@ -1,8 +1,8 @@
 import {AppConfig} from "../types/configTypes";
-import {config} from "./configurator";
+import {Configurator} from "./configurator";
 
 class ConfigService {
-    private static instance: ConfigService;
+    private readonly configurator: Configurator;
 
     private _paths: AppConfig['paths'];
     private _parsing: AppConfig['parsing'];
@@ -14,19 +14,13 @@ class ConfigService {
         this.initializeConfig();
     }
 
-    public static getInstance(): ConfigService {
-        if (!ConfigService.instance) {
-            ConfigService.instance = new ConfigService();
-        }
-        return ConfigService.instance;
-    }
-
     private initializeConfig(): void {
-        this._paths = config.getSection('paths');
-        this._parsing = config.getSection('parsing');
-        this._validation = config.getSection('validation');
-        this._aggregation = config.getSection('aggregation');
-        this._logging = config.getSection('logging');
+        this.configurator = new Configurator();
+        this._paths = this.configurator.getSection('paths');
+        this._parsing = this.configurator.getSection('parsing');
+        this._validation = this.configurator.getSection('validation');
+        this._aggregation = this.configurator.getSection('aggregation');
+        this._logging = this.configurator.getSection('logging');
     }
 
     get paths(): AppConfig['paths'] {
@@ -49,5 +43,3 @@ class ConfigService {
         return this._logging;
     }
 }
-
-export const configService: ConfigService = ConfigService.getInstance();

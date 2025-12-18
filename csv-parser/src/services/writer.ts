@@ -7,7 +7,7 @@ import {configService} from "./config-service";
 import {getContext} from "../utils/context";
 
 export class Writer {
-    public async createJson(total: ParseResult, stat: StatData, fileName: string): Promise<void> {
+    public async writeOutput(total: ParseResult, stat: StatData, fileName: string): Promise<void> {
         logger.info('Creating report file...', null, getContext(this));
         try {
             await this.checkDirectoryExistence();
