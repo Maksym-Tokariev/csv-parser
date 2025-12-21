@@ -1,10 +1,21 @@
-import {logger} from "./logger";
-import {ValidationError} from "../types/validationTypes";
+import {Logger} from "./logger";
+import {ValidationError} from "../types/validation-types";
 import {getContext} from "../utils/context";
 
 export class ErrorReporter {
+    private readonly logger: Logger;
 
-    public pushError(errors: ValidationError[], lineNumber: number, message: string, value: string = '', fieldName?: string,): void {
+    constructor(logger: Logger) {
+        this.logger = logger;
+    }
+
+    public pushError(
+        errors: ValidationError[],
+        lineNumber: number,
+        message: string,
+        value: string = '',
+        fieldName?: string
+    ): void {
         const error: ValidationError = {
             lineNumber,
             message,
@@ -20,8 +31,7 @@ export class ErrorReporter {
         if (errors.length === 0) {
             return;
         }
-
-        logger.warn(`Found validation error`,
+        this.logger.info(`Found validation error`,
             new Set(errors.map(e => e.lineNumber)).size,
             getContext(this));
 
@@ -29,11 +39,11 @@ export class ErrorReporter {
             const logData = {
                 errorNumber: index + 1,
                 lineNumber: error.lineNumber,
-                field: error.field,
+                field: error.field || '',
                 value: error.value?.substring(0, 100)
             };
 
-            logger.warn(error.message, logData, `${getContext(this)}.Detail`);
+            this.logger.warn(error.message, logData, `${getContext(this)}.Detail`);
         });
     }
 

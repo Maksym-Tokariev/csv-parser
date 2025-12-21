@@ -58,3 +58,16 @@ export interface AppConfig {
     aggregation?: AggregationConfig;
     logging?: LoggingConfig;
 }
+export type RequiredPathsConfig = Required<PathsConfig>;
+export type RequiredParserConfig = Required<ParserConfig>;
+export type RequiredValidationConfig = Required<ValidationConfig>;
+export type RequiredAggregationConfig = Required<AggregationConfig>;
+export type RequiredLoggingConfig = Required<LoggingConfig>;
+
+export type RequiredAppConfig = {
+    paths: RequiredPathsConfig;
+    parsing: RequiredParserConfig;
+    validation: RequiredValidationConfig;
+    aggregation: RequiredAggregationConfig;
+    logging: RequiredLoggingConfig;
+};

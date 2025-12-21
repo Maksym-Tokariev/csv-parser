@@ -1,6 +1,4 @@
 import * as path from 'path';
-import {ContextTypes} from "../types/contextTypes";
-import {Parser} from "../index";
 
 export const RESULT_FILE_NAME = 'report.json';
 export const INPUT_FILE_NAME = 'exampleData.csv';

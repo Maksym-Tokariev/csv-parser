@@ -1,26 +1,24 @@
 import {LOG_LEVEL, LOG_LEVELS, LogLevel} from "../config/logging";
-import {configService} from "./config-service";
+import {ConfigService} from "./config-service";
 
 export class Logger {
-    private static instance: Logger;
-    private level: LogLevel = configService.logging.level;
+    private config: ConfigService;
+    private readonly level: LogLevel;
 
-    public static getInstance(): Logger {
-        if (!Logger.instance) {
-            Logger.instance = new Logger();
-        }
-        return Logger.instance;
+    constructor(config: ConfigService) {
+        this.config = config;
+        this.level = this.config.logging?.level || LOG_LEVEL.INFO;
     }
 
     private formatMessage(level: LogLevel, message: string, context?: string): string {
         const parts: string[] = [];
-        if (configService.logging.showTimestamp) {
+        if (this.config.logging?.showTimestamp) {
             parts.push(`[${new Date().toISOString()}]`);
         }
-        if (configService.logging.showLevel) {
+        if (this.config.logging?.showLevel) {
             parts.push(`[${level.toUpperCase()}]`);
         }
-        if (configService.logging.showContext) {
+        if (this.config.logging?.showContext) {
             parts.push(`[${context}]`);
         }
         parts.push(message);
@@ -55,7 +53,7 @@ export class Logger {
 
     public warn(message: string, data?: any, context?: string): void {
         if (this.shouldLog(LOG_LEVEL.WARN)) {
-            const formatted = this.formatMessage(LOG_LEVEL.WARN, message, context);
+            const formatted: string = this.formatMessage(LOG_LEVEL.WARN, message, context);
             if (data) {
                 console.warn(formatted, data);
             } else {
@@ -66,7 +64,7 @@ export class Logger {
 
     public error(message: string, data?: any, context?: string): void {
         if (this.shouldLog(LOG_LEVEL.ERROR)) {
-            const formatted = this.formatMessage(LOG_LEVEL.ERROR, message, context);
+            const formatted: string = this.formatMessage(LOG_LEVEL.ERROR, message, context);
             if (data) {
                 console.error(formatted, data);
             } else {
@@ -75,4 +73,3 @@ export class Logger {
         }
     }
 }
-export const logger: Logger = Logger.getInstance();

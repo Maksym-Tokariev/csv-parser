@@ -1,15 +1,22 @@
-import {ParseResult} from "../types/parsingTypes";
-import {logger} from "./logger";
-import {configService} from "./config-service";
-import {DimensionStats, StatData} from "../types/statTypes";
+import {ParseResult} from "../types/parsing-types";
+import {Logger} from "./logger";
+import {ConfigService} from "./config-service";
+import {DimensionStats, StatData} from "../types/stat-types";
 import {getContext} from "../utils/context";
 
 export class Aggregator {
+    private config: ConfigService;
+    private logger: Logger;
+
+    constructor(config: ConfigService, logger: Logger) {
+        this.config = config;
+        this.logger = logger
+    }
 
     public async aggregateData(data: ParseResult): Promise<StatData> {
-        logger.info('Start of aggregation', null, getContext(this))
+        this.logger.info('Start of aggregation', null, getContext(this))
         const total: StatData = this.createEmptyStatData();
-        if (configService.aggregation.performAggregation) {
+        if (this.config.aggregation?.aggregate) {
             this.calculateTotalItems(data, total);
             this.calculateTotalRevenue(data, total);
 
@@ -19,33 +26,33 @@ export class Aggregator {
             this.setCategoryStats(categoryStat, total);
             this.setCountryStats(countryStat, total);
 
-            logger.info('Aggregation completed', null, getContext(this));
+            this.logger.info('Aggregation completed', null, getContext(this));
         }
         return total;
     }
 
     private calculateTotalItems(data: ParseResult, totalStat: StatData): void {
-        if (!configService.aggregation.calculateTotalItems) return
+        if (!this.config.aggregation?.calculateTotalItems) return
         totalStat.totalItems = data.records.reduce((sum, record) =>
             sum + parseInt(record.quantity, 10), 0);
-        logger.debug(`Total items [${totalStat.totalItems}]`);
+        this.logger.debug(`Total items [${totalStat.totalItems}]`);
     }
 
     private calculateTotalRevenue(data: ParseResult, totalStat: StatData): void {
-        if (!configService.aggregation.calculateTotalRevenue) return
+        if (!this.config.aggregation?.calculateTotalRevenue) return
         totalStat.totalRevenue = data.records.reduce((sum, record) => {
             const price = parseFloat(record.price);
             const quantity = parseInt(record.quantity, 5);
             return sum + (price * quantity);
         }, 0);
-        logger.debug(`Total revenue [${totalStat.totalRevenue}]`, null, getContext(this));
+        this.logger.debug(`Total revenue [${totalStat.totalRevenue}]`, null, getContext(this));
     }
 
     private calculateDimensionStats(
         data: ParseResult,
         dimension: 'category' | 'country'
     ): { stats: DimensionStats; count: number } {
-        if (!configService.aggregation.calculateDimensionStats) {
+        if (!this.config.aggregation?.calculateDimensionStats) {
             return { stats: this.createEmptyDimensionStats(), count: 0 }
         }
         const itemsMap = new Map<string, number>();

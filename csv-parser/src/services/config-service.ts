@@ -1,45 +1,103 @@
-import {AppConfig} from "../types/configTypes";
-import {Configurator} from "./configurator";
+import {
+    AppConfig, RequiredAggregationConfig,
+    RequiredAppConfig, RequiredLoggingConfig,
+    RequiredParserConfig,
+    RequiredPathsConfig,
+    RequiredValidationConfig
+} from "../types/config-types";
+import {DEFAULT_CONFIG} from "../config/default-configs";
 
-class ConfigService {
-    private readonly configurator: Configurator;
+export class ConfigService {
+    private config: RequiredAppConfig;
+    private isLocked: boolean = false;
 
-    private _paths: AppConfig['paths'];
-    private _parsing: AppConfig['parsing'];
-    private _validation: AppConfig['validation'];
-    private _aggregation: AppConfig['aggregation'];
-    private _logging: AppConfig['logging'];
-
-    private constructor() {
-        this.initializeConfig();
+    constructor(userConfig?: Partial<AppConfig>) {
+        this.config = this.merge(DEFAULT_CONFIG, userConfig || {}) as RequiredAppConfig;
     }
 
-    private initializeConfig(): void {
-        this.configurator = new Configurator();
-        this._paths = this.configurator.getSection('paths');
-        this._parsing = this.configurator.getSection('parsing');
-        this._validation = this.configurator.getSection('validation');
-        this._aggregation = this.configurator.getSection('aggregation');
-        this._logging = this.configurator.getSection('logging');
+    get paths(): Readonly<RequiredAppConfig['paths']> {
+        return this.config.paths;
     }
 
-    get paths(): AppConfig['paths'] {
-        return this._paths
+    get parsing(): Readonly<RequiredAppConfig['parsing']> {
+        return this.config.parsing;
     }
 
-    get parsing(): AppConfig['parsing'] {
-        return this._parsing;
+    get validation(): Readonly<RequiredAppConfig['validation']> {
+        return this.config.validation;
     }
 
-    get validation(): AppConfig['validation'] {
-        return this._validation;
+    get aggregation(): Readonly<RequiredAppConfig['aggregation']> {
+        return this.config.aggregation;
     }
 
-    get aggregation(): AppConfig['aggregation'] {
-        return this._aggregation;
+    get logging(): Readonly<RequiredAppConfig['logging']> {
+        return this.config.logging;
     }
 
-    get logging(): AppConfig['logging'] {
-        return this._logging;
+    getConfig(): Readonly<RequiredAppConfig> {
+        return this.config;
+    }
+
+    getSection<K extends keyof AppConfig>(section: K): AppConfig[K] {
+        return this.config[section];
+    }
+
+    getValue<S extends keyof RequiredAppConfig,P extends keyof RequiredAppConfig[S]>(
+        section: S,
+        prop: P
+    ): RequiredAppConfig[S][P] {
+        return this.config[section][prop];
+    }
+
+    setValue<
+        S extends keyof RequiredAppConfig,
+        P extends keyof RequiredAppConfig[S]
+    >(
+        section: S,
+        property: P,
+        value: RequiredAppConfig[S][P]
+    ): this {
+        const sectionConfig: RequiredAppConfig[S] = this.config[section];
+
+        if (property in sectionConfig) {
+            sectionConfig[property] = value;
+        } else {
+            throw new Error(`Property ${String(property)} does not exist in section ${section}`);
+        }
+        return this;
+    }
+
+    update(updates: Partial<AppConfig>): void {
+        this.config = this.merge(this.config, updates);
+
+    }
+
+    lock(): void {
+        this.isLocked = true;
+    }
+
+    unlock(): void {
+        this.isLocked = false;
+    }
+
+    isConfigLocked(): boolean {
+        return this.isLocked;
+    }
+
+    clone(): ConfigService {
+        return new ConfigService(this.config);
+    }
+
+    private merge(defaultConfig: RequiredAppConfig, updates: Partial<AppConfig>): RequiredAppConfig {
+        return {
+            ...defaultConfig,
+            ...updates,
+            paths: {...defaultConfig.paths, ...updates.paths} as RequiredPathsConfig,
+            parsing: {...defaultConfig.parsing, ...updates.parsing} as RequiredParserConfig,
+            validation: {...defaultConfig.validation, ...updates.validation} as RequiredValidationConfig,
+            aggregation: {...defaultConfig.aggregation, ...updates.aggregation} as RequiredAggregationConfig,
+            logging: {...defaultConfig.logging, ...updates.logging} as RequiredLoggingConfig
+        }
     }
 }

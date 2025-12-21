@@ -1,65 +1,65 @@
 import * as fs from 'fs';
 import readline from 'readline';
-import {
-    CSVRecord,
-    ParseResult, ParserOptions
-} from '../types/parsingTypes';
-import { Validator } from "./validator";
-import {logger} from "./logger";
-import {configService} from "./config-service";
+import {CSVRecord, ParseResult} from '../types/parsing-types';
+import {Validator} from "./validator";
+import {Logger} from "./logger";
+import {ConfigService} from "./config-service";
 import {getContext} from "../utils/context";
+import {ErrorReporter} from "./error-reporter";
 
 export class CSVProcessor {
-    private readonly filePath: string;
+    private config: ConfigService;
+    private logger: Logger;
     private readonly validator: Validator;
 
-    constructor(filePath: string = configService.paths.inputFilePath) {
-        this.filePath = filePath;
-        this.validator = new Validator();
+    constructor(config: ConfigService, logger: Logger, reporter: ErrorReporter) {
+        this.config = config;
+        this.logger = logger;
+        this.validator = new Validator(config, logger, reporter);
     }
 
-    public async parseCSV(source: string | File | Buffer, options: ParserOptions): Promise<ParseResult> {
-        const rl = await this.initializeFileReader();
+    public async parseCSV(filePath: string): Promise<ParseResult> {
+        const rl = await this.initializeFileReader(filePath);
         try {
-            logger.info('Start of parsing', this.filePath, getContext(this));
+            this.logger.info('Start of parsing', filePath, getContext(this));
 
             const header: string[] = await this.readHeader(rl);
             this.validator.checkHeaderCorrect(header);
 
             return await this.processDataLines(rl);
         } catch (error: any) {
-            logger.error('CSV parsing failed' , {
-                filePath: this.filePath,
+            this.logger.error('CSV parsing failed' , {
+                filePath: filePath,
                 error: error.message,
             });
             throw error;
         } finally {
             if (rl) {
                 rl.close();
-                logger.debug('Readline interface closed');
+                this.logger.debug('Readline interface closed', null, getContext(this));
             }
-            logger.debug('Stream closed', null, getContext(this));
+            this.logger.debug('Stream closed', null, getContext(this));
         }
     }
 
-    private async initializeFileReader(): Promise<readline.Interface> {
-        if (!this.isFileFound()) {
+    private async initializeFileReader(filePath: string): Promise<readline.Interface> {
+        if (!this.isFileFound(filePath)) {
             const error = new Error('File not found')
-            logger.error(error.message, this.filePath, getContext(this));
+            this.logger.error(error.message, filePath, getContext(this));
             throw error;
         }
-        const fileStream = fs.createReadStream(this.filePath, {
+        const fileStream = fs.createReadStream(filePath, {
             encoding: 'utf-8'
         });
-        logger.info('Reader was initialized', null, getContext(this));
+        this.logger.info('Reader was initialized', null, getContext(this));
         return readline.createInterface({
             input: fileStream,
             crlfDelay: Infinity
         });
     }
 
-    private isFileFound(): boolean {
-        return fs.existsSync(this.filePath);
+    private isFileFound(filePath: string): boolean {
+        return fs.existsSync(filePath);
     }
 
     private async readHeader(rl: readline.Interface): Promise<string[]> {
@@ -68,66 +68,64 @@ export class CSVProcessor {
 
         if (headerResult.done) {
             const error = new Error('CSV file is empty');
-            logger.error('CSV file is empty', error, getContext(this));
+            this.logger.error('CSV file is empty', error, getContext(this));
             throw error;
         }
-        return headerResult.value.split(configService.validation.separator);
+        return headerResult.value.split(this.config.validation?.separator? this.config.validation.separator : ',');
     }
 
     private async processDataLines(rl: readline.Interface): Promise<ParseResult> {
         const result: ParseResult = this.createEmptyResult();
         let lineNumber: number = 1;
 
-        logger.info('Process line', null, getContext(this))
+        this.logger.info('Process line', null, getContext(this))
         for await (const line of rl) {
             lineNumber++;
             result.totalLines++;
 
             if (line.trim().length === 0) {
-                logger.debug('Skipping empty line', lineNumber, getContext(this));
+                this.logger.debug('Skipping empty line', lineNumber, getContext(this));
                 continue;
             }
 
-            logger.debug('Process line:\n', line, getContext(this));
+            this.logger.debug('Process line:\n', line, getContext(this));
             try {
                 await this.processLine(line, lineNumber, result);
             } catch (error: any) {
-                logger.warn('Error processing line', {
+                this.logger.warn('Error processing line', {
                     lineNumber,
                     line,
-                    error: error.message
-                });
+                    error: error
+                }, getContext(this));
             }
         }
-        logger.info('Validation completed', null, getContext(this))
+        this.logger.info('Validation completed', null, getContext(this))
         return result;
     }
 
     private async processLine(line: string, lineNumber: number, result: ParseResult): Promise<void> {
-        const values: string[] = line.split(',');
-        const hasValidationErrors = this.validator.validateLine(values, lineNumber);
+        const values: string[] = line.split(this.config.parsing?.separator);
+        const hasValidationErrors: boolean = this.validator.validateLine(values, lineNumber);
 
         if (hasValidationErrors) {
             result.invalidLines++;
-            logger.warn('Invalid line values: ', line, getContext(this))
-            return
+            this.logger.warn('Invalid line values: ', line, getContext(this))
+            return;
         }
         const record = this.createRecord(values);
-        logger.debug('Record added\n', record, getContext(this));
+        this.logger.debug('Record added\n', record, getContext(this));
 
         result.records.push(record);
         result.validLines++;
     }
 
     private createRecord(values: string[]): CSVRecord {
-        return {
-            id: values[0]?.trim() || '',
-            category: values[1]?.trim() || '',
-            country: values[2]?.trim() || '',
-            price: values[3]?.trim() || '',
-            quantity: values[4]?.trim() || '',
-            sold_at: values[5]?.trim() || ''
-        }
+        const columns = this.config.parsing?.columns;
+        const record: CSVRecord = {} as CSVRecord;
+        columns?.forEach((columnName, index) => {
+            record[columnName as keyof CSVRecord] = values[index]?.trim() || '';
+        });
+        return record;
     }
 
     private createEmptyResult(): ParseResult {

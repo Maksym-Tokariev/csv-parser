@@ -1,5 +1,5 @@
 import path from "path";
-import {AppConfig} from "../types/configTypes";
+import {AppConfig, RequiredAppConfig} from "../types/config-types";
 import {SEPARATORS} from "./validation";
 import {LOG_LEVEL} from "./logging";
 import {
@@ -11,12 +11,13 @@ import {
     SPECIAL_CHARS_REGEX, INPUT_FILE_NAME
 } from "./constants";
 
-export const DEFAULT_CONFIG: AppConfig = {
+export const DEFAULT_CONFIG: RequiredAppConfig = {
     paths: {
         resultsDir: RESULTS_DIR,
         inputFilePath: path.join(DATA_DIR, INPUT_FILE_NAME),
         resultFilePath: path.join(RESULTS_DIR, RESULT_FILE_NAME),
-        resultFileName: RESULT_FILE_NAME
+        resultFileName: RESULT_FILE_NAME,
+        outputFormat: "json"
     },
     parsing: {
         columns: EXPECTED_COLUMNS,
@@ -40,7 +41,8 @@ export const DEFAULT_CONFIG: AppConfig = {
         digitsRegExp: DIGIT_REGEX ,
         isoRegExp: ISO_REGEX,
         positiveIntegerRegex: POSITIVE_INTEGER_REGEX,
-        floatNumberRegEx: FLOAT_NUMBER_REGEX
+        floatNumberRegEx: FLOAT_NUMBER_REGEX,
+        hasHeader: true
     },
     aggregation: {
         aggregate: true,
