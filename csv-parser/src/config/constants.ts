@@ -3,9 +3,7 @@ import * as path from 'path';
 export const RESULT_FILE_NAME = 'report.json';
 export const INPUT_FILE_NAME = 'exampleData.csv';
 export const PROJECT_ROOT: string = path.resolve(__dirname, '../..');
-export const DATA_DIR: string = path.join(PROJECT_ROOT, 'data');
 export const RESULTS_DIR: string = path.join(PROJECT_ROOT, 'results');
-export const INPUT_FILE_PATH: string = path.join(DATA_DIR, INPUT_FILE_NAME);
 export const RESULT_FILE_PATH: string = path.join(RESULTS_DIR, RESULT_FILE_NAME);
 
 export const EXPECTED_COLUMNS: readonly string[] = [

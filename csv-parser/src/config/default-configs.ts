@@ -1,10 +1,9 @@
 import path from "path";
-import {AppConfig, RequiredAppConfig} from "../types/config-types";
+import {RequiredAppConfig} from "../types/config-types";
 import {SEPARATORS} from "./validation";
 import {LOG_LEVEL} from "./logging";
 import {
-    EXPECTED_COLUMNS,
-    DATA_DIR, DATE_FORMAT, DIGIT_REGEX,
+    EXPECTED_COLUMNS, DATE_FORMAT, DIGIT_REGEX,
     FLOAT_NUMBER_REGEX, ID_PREFIX, ISO_REGEX,
     MAX_LINE_SIZE, POSITIVE_INTEGER_REGEX,
     RESULT_FILE_NAME, RESULTS_DIR,
@@ -14,7 +13,6 @@ import {
 export const DEFAULT_CONFIG: RequiredAppConfig = {
     paths: {
         resultsDir: RESULTS_DIR,
-        inputFilePath: path.join(DATA_DIR, INPUT_FILE_NAME),
         resultFilePath: path.join(RESULTS_DIR, RESULT_FILE_NAME),
         resultFileName: RESULT_FILE_NAME,
         outputFormat: "json"
