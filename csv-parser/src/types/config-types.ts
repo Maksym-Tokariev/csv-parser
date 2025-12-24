@@ -3,7 +3,6 @@ import {LogLevel} from "../config/logging";
 
 export interface PathsConfig {
     resultsDir?: string;
-    inputFilePath?: string;
     resultFilePath?: string;
     resultFileName?: string;
     outputFormat?: 'json' | 'csv' | 'array';

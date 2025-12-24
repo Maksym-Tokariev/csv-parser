@@ -15,7 +15,7 @@ export class Writer {
         this.logger = logger;
     }
 
-    public async writeOutput(total: ParseResult, stat: StatData, fileName: string): Promise<void> {
+    public async writeOutput(total: ParseResult, stat: StatData, file: string): Promise<void> {
         this.logger.info('Creating report file...', null, getContext(this));
         try {
             await this.checkDirectoryExistence();
@@ -29,16 +29,16 @@ export class Writer {
                 if (e) {
                     this.logger.error(e.message, e, getContext(this));
                 } else
-                    this.logger.info('File has been created: ', fileName, getContext(this));
+                    this.logger.info('File has been created: ', file, getContext(this));
             });
             this.logger.info('Report file created successfully', {
-                fileName,
+                file,
                 fileSize: `${(jsonRep.length / 1024).toFixed(2)} KB`,
-                path: path.resolve(fileName)
+                path: path.resolve(file)
             }, getContext(this));
         } catch (error: any) {
             this.logger.error('Failed to create report file', {
-                fileName,
+                file,
                 error: error.message,
                 stack: error.stack
             }, getContext(this));
