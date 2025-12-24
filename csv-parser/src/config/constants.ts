@@ -1,14 +1,12 @@
 import * as path from 'path';
-import {ContextTypes} from "../types/contextTypes";
-import {Parser} from "../index";
 
 export const RESULT_FILE_NAME = 'report.json';
 export const INPUT_FILE_NAME = 'exampleData.csv';
-export const PROJECT_ROOT = path.resolve(__dirname, '../..');
-export const DATA_DIR = path.join(PROJECT_ROOT, 'data');
-export const RESULTS_DIR = path.join(PROJECT_ROOT, 'results');
-export const INPUT_FILE_PATH = path.join(DATA_DIR, INPUT_FILE_NAME);
-export const RESULT_FILE_PATH = path.join(RESULTS_DIR, RESULT_FILE_NAME);
+export const PROJECT_ROOT: string = path.resolve(__dirname, '../..');
+export const DATA_DIR: string = path.join(PROJECT_ROOT, 'data');
+export const RESULTS_DIR: string = path.join(PROJECT_ROOT, 'results');
+export const INPUT_FILE_PATH: string = path.join(DATA_DIR, INPUT_FILE_NAME);
+export const RESULT_FILE_PATH: string = path.join(RESULTS_DIR, RESULT_FILE_NAME);
 
 export const EXPECTED_COLUMNS: readonly string[] = [
     'id', 'category', 'country', 'price', 'quantity', 'sold_at'
@@ -24,3 +22,4 @@ export const DIGIT_REGEX : RegExp = /\d/;
 export const MAX_LINE_SIZE = 30;
 export const DATE_FORMAT = 'YYYY-MM-DDTHH:MM:SSZ';
 export const ID_PREFIX = 'P';
+export const FRACTION_DIGITS: number = 2

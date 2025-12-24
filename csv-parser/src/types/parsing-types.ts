@@ -1,4 +1,4 @@
-import {StatData} from "./statTypes";
+import {StatData} from "./stat-types";
 
 export interface CSVRecord {
     id: string;
@@ -20,6 +20,6 @@ export interface Report {
     totalLines: number;
     validLines: number;
     invalidLines: number;
-    skippedRows: number,
-    stat: StatData
+    skippedRows: number;
+    stat: StatData;
 }

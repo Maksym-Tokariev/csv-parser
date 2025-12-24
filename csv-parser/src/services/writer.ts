@@ -1,14 +1,22 @@
 import * as fs from "node:fs";
-import { ParseResult, Report } from "../types/parsingTypes";
-import {StatData} from "../types/statTypes";
-import {logger} from "./logger";
+import { ParseResult, Report } from "../types/parsing-types";
+import {StatData} from "../types/stat-types";
+import {Logger} from "./logger";
 import path from "node:path";
-import {configService} from "./config-service";
+import {ConfigService} from "./config-service";
 import {getContext} from "../utils/context";
 
 export class Writer {
-    public async createJson(total: ParseResult, stat: StatData, fileName: string): Promise<void> {
-        logger.info('Creating report file...', null, getContext(this));
+    private config: ConfigService;
+    private logger: Logger;
+
+    constructor(config: ConfigService, logger: Logger) {
+        this.config = config;
+        this.logger = logger;
+    }
+
+    public async writeOutput(total: ParseResult, stat: StatData, fileName: string): Promise<void> {
+        this.logger.info('Creating report file...', null, getContext(this));
         try {
             await this.checkDirectoryExistence();
             const rep: Report = this.createEmptyReport();
@@ -17,19 +25,19 @@ export class Writer {
 
             const jsonRep = JSON.stringify(rep, null, 2);
 
-            fs.writeFile(configService.paths.resultFileName, jsonRep, 'utf-8', e => {
+            fs.writeFile(this.config.paths?.resultFileName, jsonRep, 'utf-8', e => {
                 if (e) {
-                    logger.error(e.message, e, getContext(this));
+                    this.logger.error(e.message, e, getContext(this));
                 } else
-                    logger.info('File has been created: ', fileName, getContext(this));
+                    this.logger.info('File has been created: ', fileName, getContext(this));
             });
-            logger.info('Report file created successfully', {
+            this.logger.info('Report file created successfully', {
                 fileName,
                 fileSize: `${(jsonRep.length / 1024).toFixed(2)} KB`,
                 path: path.resolve(fileName)
             }, getContext(this));
         } catch (error: any) {
-            logger.error('Failed to create report file', {
+            this.logger.error('Failed to create report file', {
                 fileName,
                 error: error.message,
                 stack: error.stack
@@ -77,13 +85,13 @@ export class Writer {
     }
 
     private async checkDirectoryExistence(): Promise<boolean> {
-        const dir: string = configService.paths.resultsDir;
+        const dir: string = this.config.paths?.resultsDir;
         try {
             await fs.promises.access(dir, fs.constants.W_OK);
-            logger.debug('Directory exists and is writable', dir, getContext(this));
+            this.logger.debug('Directory exists and is writable', dir, getContext(this));
             return true;
         } catch (error) {
-            logger.error('Directory not found', dir , getContext(this));
+            this.logger.error('Directory not found', dir , getContext(this));
             throw new Error;
         }
     }

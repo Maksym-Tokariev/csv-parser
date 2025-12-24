@@ -1,60 +1,56 @@
-import { CSVProcessor } from './services/csv-processor';
-import { Aggregator } from "./services/aggregator";
-import { Writer } from "./services/writer";
-import { ParseResult } from "./types/parsingTypes";
-import {StatData} from "./types/statTypes";
-import {logger} from "./services/logger";
-import {config} from "./services/configurator";
-import {configService} from "./services/config-service";
-import {getContext} from "./utils/context";
+import {ParseResult} from "./types/parsing-types";
+import {AppConfig, RequiredAppConfig} from "./types/config-types";
+import {ServicesFactory} from "./services/services-factory";
+import {ParserServices} from "./interfaces/iconfig-service";
+import {StatData} from "./types/stat-types";
 
 export class Parser {
-    private readonly processor: CSVProcessor;
-    private readonly aggregator: Aggregator;
-    private readonly writer: Writer;
+    private services: ParserServices;
+    private parseResult: ParseResult = {} as ParseResult;
+    private stat: StatData = {} as StatData;
 
-    constructor() {
-        this.processor = new CSVProcessor();
-        this.aggregator = new Aggregator();
-        this.writer = new Writer();
+    constructor(services: ParserServices) {
+        this.services = services;
     }
 
-    async run(filePath: string): Promise<void> {
-        logger.info('Starting CSV processing application', {
-            inputFile: configService.paths.inputFilePath,
-            outputFile: configService.paths.resultFilePath
-        }, getContext(this));
-
+    async parse(filePath: string): Promise<this> {
         try {
-            const startTime = Date.now();
-
-            logger.debug('Section logging:\n', config.getAll(), getContext(this));
-
-            const parseResult: ParseResult = await this.processor.parseCSV();
-            const stats: StatData = await this.aggregator.aggregateData(parseResult);
-            await this.writer.createJson(parseResult, stats, filePath);
-
-            const duration = Date.now() - startTime;
-            logger.info(`Processing completed in ${duration}ms`, null, getContext(this));
+            this.parseResult = await this.services.processor.parseCSV(filePath);
+            return this;
         } catch (error: any) {
-            logger.error('Application failed', {
-                error: error.message,
-                stack: error,
-            }, getContext(this));
+            throw new Error(`CSV parsing failed: ${error.message}`);
         }
     }
-}
 
-async function main(): Promise<void> {
-    const app = new Parser();
-    await app.run(configService.paths.resultFilePath);
+    configure(updates: Partial<AppConfig>): this {
+        this.services.config.update(updates);
+        return this;
+    }
+
+    async write(resDir: string): Promise<void> {
+        try {
+            await this.services.writer.writeOutput(this.parseResult, this.stat, resDir);
+        } catch (error: any) {
+            throw new Error(`Writing error`);
+        }
+    }
+
+    async aggregate(): Promise<this> {
+        this.stat = await this.services.aggregator.aggregateData(this.parseResult);
+        return this;
+    }
+
+    getConfig(): Readonly<RequiredAppConfig> {
+        return this.services.config.getConfig();
+    }
+
+    getResult(): ParseResult {
+        return this.parseResult;
+    }
+
+    static create(config?: Partial<AppConfig>): Parser {
+        const services: ParserServices = ServicesFactory.createServices(config);
+        return new Parser(services);
+    }
 }
-main()
-    .then(() => {
-    logger.debug('Main function completed', {}, 'main');
-    })
-    .catch((error) => {
-        logger.error('Main function failed', { error }, 'main');
-        process.exit(1);
-    });
 
