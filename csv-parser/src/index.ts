@@ -7,6 +7,7 @@ import {StatData} from "./types/stat-types";
 export class Parser {
     private services: ParserServices;
     private parseResult: ParseResult = {} as ParseResult;
+    private stat: StatData = {} as StatData;
 
     constructor(services: ParserServices) {
         this.services = services;
@@ -27,7 +28,16 @@ export class Parser {
     }
 
     async write(resDir: string): Promise<void> {
-        await this.services.writer.writeOutput(this.parseResult, {} as StatData, resDir);
+        try {
+            await this.services.writer.writeOutput(this.parseResult, this.stat, resDir);
+        } catch (error: any) {
+            throw new Error(`Writing error`);
+        }
+    }
+
+    async aggregate(): Promise<this> {
+        this.stat = await this.services.aggregator.aggregateData(this.parseResult);
+        return this;
     }
 
     getConfig(): Readonly<RequiredAppConfig> {

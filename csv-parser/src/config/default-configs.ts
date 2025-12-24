@@ -8,7 +8,7 @@ import {
     FLOAT_NUMBER_REGEX, ID_PREFIX, ISO_REGEX,
     MAX_LINE_SIZE, POSITIVE_INTEGER_REGEX,
     RESULT_FILE_NAME, RESULTS_DIR,
-    SPECIAL_CHARS_REGEX, INPUT_FILE_NAME
+    SPECIAL_CHARS_REGEX, INPUT_FILE_NAME, FRACTION_DIGITS
 } from "./constants";
 
 export const DEFAULT_CONFIG: RequiredAppConfig = {
@@ -49,6 +49,7 @@ export const DEFAULT_CONFIG: RequiredAppConfig = {
         calculateTotalItems: true,
         calculateTotalRevenue: true,
         calculateDimensionStats: true,
+        fractionDigits: FRACTION_DIGITS
     },
     logging: {
         level: LOG_LEVEL.INFO,

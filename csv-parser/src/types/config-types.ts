@@ -41,6 +41,7 @@ export interface AggregationConfig {
     calculateTotalItems?: boolean;
     calculateTotalRevenue?: boolean;
     calculateDimensionStats?: boolean;
+    fractionDigits?: number;
 }
 
 export interface LoggingConfig {
